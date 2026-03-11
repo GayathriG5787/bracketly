@@ -27,6 +27,15 @@ export default function AdminDashboard(){
 
       <p>Welcome Admin</p>
 
+      <button
+        onClick={()=>{
+          localStorage.removeItem("adminLoggedIn")
+          window.location.href="/admin/login"
+        }}
+      >
+        Logout
+      </button>
+
     </div>
 
   )
