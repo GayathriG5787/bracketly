@@ -26,10 +26,20 @@ export default function CreateTournament() {
       })
 
     if (error) {
-      alert("Error creating tournament")
+
+      // PostgreSQL duplicate key error
+      if (error.code === "23505") {
+        alert("Tournament already created")
+      } else {
+        alert("Error creating tournament")
+      }
+
       console.log(error)
+
     } else {
+
       alert("Tournament created successfully")
+
       setName("")
       setLocation("")
       setDate("")
