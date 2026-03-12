@@ -8,9 +8,14 @@ export default function CreateTournament() {
   const [name, setName] = useState("")
   const [location, setLocation] = useState("")
   const [date, setDate] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (loading) return
+
+    setLoading(true)
 
     const { error } = await supabase
       .from("tournaments")
@@ -29,6 +34,8 @@ export default function CreateTournament() {
       setLocation("")
       setDate("")
     }
+
+    setLoading(false)
   }
 
   return (
@@ -63,8 +70,12 @@ export default function CreateTournament() {
           onChange={(e) => setDate(e.target.value)}
         />
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded">
-          Create Tournament
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Creating..." : "Create Tournament"}
         </button>
 
       </form>
