@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 
 export default function RegisterPlayer() {
@@ -13,7 +13,29 @@ export default function RegisterPlayer() {
   const [gender, setGender] = useState("")
   const [beltRank, setBeltRank] = useState("")
   const [tournamentId, setTournamentId] = useState("")
+  const [tournaments, setTournaments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+
+    const fetchTournaments = async () => {
+
+      const { data, error } = await supabase
+        .from("tournaments")
+        .select("*")
+        .order("tournament_date", { ascending: true })
+
+      if (error) {
+        console.error(error)
+      } else {
+        setTournaments(data)
+      }
+
+    }
+
+    fetchTournaments()
+
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,9 +77,9 @@ export default function RegisterPlayer() {
           alert("A player with this email already exists")
         } else {
           alert("Error creating player")
+          console.error(playerError)
         }
 
-        console.error(playerError)
         setLoading(false)
         return
       }
@@ -73,16 +95,16 @@ export default function RegisterPlayer() {
         tournament_id: tournamentId
       })
 
-      if (registrationError) {
+    if (registrationError) {
 
-        if (registrationError.code === "23505") {
-          alert("You have already registered to this tournament")
-        } else {
-          alert("Error registering player")
-          console.error(registrationError)
-        }
-
+      if (registrationError.code === "23505") {
+        alert("You have already registered to this tournament")
       } else {
+        alert("Error registering player")
+        console.error(registrationError)
+      }
+
+    } else {
 
       alert("Registration successful")
 
@@ -166,13 +188,20 @@ export default function RegisterPlayer() {
           onChange={(e) => setBeltRank(e.target.value)}
         />
 
-        <input
-          type="text"
-          placeholder="Tournament ID"
+        <select
           className="border p-2 w-full"
           value={tournamentId}
           onChange={(e) => setTournamentId(e.target.value)}
-        />
+        >
+          <option value="">Select Tournament</option>
+
+          {tournaments.map((tournament) => (
+            <option key={tournament.id} value={tournament.id}>
+              {tournament.name} — 📍 {tournament.location} | 📅 {new Date(tournament.tournament_date).toLocaleDateString()}
+            </option>
+          ))}
+
+        </select>
 
         <button
           type="submit"
