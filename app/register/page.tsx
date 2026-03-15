@@ -16,6 +16,18 @@ export default function RegisterPlayer() {
   const [tournaments, setTournaments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+  // participation counts
+  const [districtParticipations, setDistrictParticipations] = useState("")
+  const [stateParticipations, setStateParticipations] = useState("")
+  const [nationalParticipations, setNationalParticipations] = useState("")
+
+  // achievements list
+  const [achievements, setAchievements] = useState<any[]>([])
+
+  const [level, setLevel] = useState("")
+  const [medalType, setMedalType] = useState("")
+  const [year, setYear] = useState("")
+
   useEffect(() => {
 
     const fetchTournaments = async () => {
@@ -25,11 +37,7 @@ export default function RegisterPlayer() {
         .select("*")
         .order("tournament_date", { ascending: true })
 
-      if (error) {
-        console.error(error)
-      } else {
-        setTournaments(data)
-      }
+      if (!error) setTournaments(data)
 
     }
 
@@ -37,13 +45,30 @@ export default function RegisterPlayer() {
 
   }, [])
 
+  const addAchievement = () => {
+
+    if (!level || !medalType || !year) {
+      alert("Please fill achievement fields")
+      return
+    }
+
+    setAchievements([
+      ...achievements,
+      { level, medal_type: medalType, year: Number(year) }
+    ])
+
+    setLevel("")
+    setMedalType("")
+    setYear("")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault()
 
     if (loading) return
     setLoading(true)
 
-    // STEP 1: Check if player already exists using email
     const { data: existingPlayer } = await supabase
       .from("players")
       .select("*")
@@ -53,10 +78,11 @@ export default function RegisterPlayer() {
     let playerId
 
     if (existingPlayer) {
+
       playerId = existingPlayer.id
+
     } else {
 
-      // STEP 2: Create new player
       const { data: newPlayer, error: playerError } = await supabase
         .from("players")
         .insert({
@@ -72,14 +98,8 @@ export default function RegisterPlayer() {
         .single()
 
       if (playerError) {
-
-        if (playerError.code === "23505") {
-          alert("A player with this email already exists")
-        } else {
-          alert("Error creating player")
-          console.error(playerError)
-        }
-
+        alert("Error creating player")
+        console.error(playerError)
         setLoading(false)
         return
       }
@@ -87,7 +107,6 @@ export default function RegisterPlayer() {
       playerId = newPlayer.id
     }
 
-    // STEP 3: Insert registration
     const { error: registrationError } = await supabase
       .from("registrations")
       .insert({
@@ -96,29 +115,81 @@ export default function RegisterPlayer() {
       })
 
     if (registrationError) {
-
-      if (registrationError.code === "23505") {
-        alert("You have already registered to this tournament")
-      } else {
-        alert("Error registering player")
-        console.error(registrationError)
-      }
-
-    } else {
-
-      alert("Registration successful")
-
-      setName("")
-      setEmail("")
-      setPhone("")
-      setAge("")
-      setWeight("")
-      setGender("")
-      setBeltRank("")
-      setTournamentId("")
+      alert("Registration failed")
+      console.error(registrationError)
+      setLoading(false)
+      return
     }
 
+    // Insert achievements
+    if (achievements.length > 0) {
+
+      const achievementRows = achievements.map((a) => ({
+        player_id: playerId,
+        level: a.level,
+        medal_type: a.medal_type,
+        year: a.year
+      }))
+
+      await supabase
+        .from("player_achievements")
+        .insert(achievementRows)
+
+    }
+
+    // Insert participations
+
+    const participationRows = []
+
+    for (let i = 0; i < Number(districtParticipations || 0); i++) {
+      participationRows.push({
+        player_id: playerId,
+        level: "district",
+        year: new Date().getFullYear()
+      })
+    }
+
+    for (let i = 0; i < Number(stateParticipations || 0); i++) {
+      participationRows.push({
+        player_id: playerId,
+        level: "state",
+        year: new Date().getFullYear()
+      })
+    }
+
+    for (let i = 0; i < Number(nationalParticipations || 0); i++) {
+      participationRows.push({
+        player_id: playerId,
+        level: "national",
+        year: new Date().getFullYear()
+      })
+    }
+
+    if (participationRows.length > 0) {
+
+      await supabase
+        .from("player_participations")
+        .insert(participationRows)
+
+    }
+
+    alert("Registration successful")
+
+    setName("")
+    setEmail("")
+    setPhone("")
+    setAge("")
+    setWeight("")
+    setGender("")
+    setBeltRank("")
+    setTournamentId("")
+    setAchievements([])
+    setDistrictParticipations("")
+    setStateParticipations("")
+    setNationalParticipations("")
+
     setLoading(false)
+
   }
 
   return (
@@ -197,16 +268,92 @@ export default function RegisterPlayer() {
 
           {tournaments.map((tournament) => (
             <option key={tournament.id} value={tournament.id}>
-              {tournament.name} — 📍 {tournament.location} | 📅 {new Date(tournament.tournament_date).toLocaleDateString()}
+              {tournament.name}
             </option>
           ))}
 
         </select>
 
+        {/* PARTICIPATIONS */}
+
+        <h2 className="font-semibold mt-4">Participations</h2>
+
+        <input
+          type="number"
+          placeholder="District Participations"
+          className="border p-2 w-full"
+          value={districtParticipations}
+          onChange={(e) => setDistrictParticipations(e.target.value)}
+        />
+
+        <input
+          type="number"
+          placeholder="State Participations"
+          className="border p-2 w-full"
+          value={stateParticipations}
+          onChange={(e) => setStateParticipations(e.target.value)}
+        />
+
+        <input
+          type="number"
+          placeholder="National Participations"
+          className="border p-2 w-full"
+          value={nationalParticipations}
+          onChange={(e) => setNationalParticipations(e.target.value)}
+        />
+
+        {/* ACHIEVEMENTS */}
+
+        <h2 className="font-semibold mt-4">Achievements</h2>
+
+        <select
+          className="border p-2 w-full"
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+        >
+          <option value="">Level</option>
+          <option value="district">District</option>
+          <option value="state">State</option>
+          <option value="national">National</option>
+        </select>
+
+        <select
+          className="border p-2 w-full"
+          value={medalType}
+          onChange={(e) => setMedalType(e.target.value)}
+        >
+          <option value="">Medal</option>
+          <option value="bronze">Bronze</option>
+          <option value="silver">Silver</option>
+          <option value="gold">Gold</option>
+        </select>
+
+        <input
+          type="number"
+          placeholder="Year"
+          className="border p-2 w-full"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+        />
+
+        <button
+          type="button"
+          onClick={addAchievement}
+          className="bg-gray-500 text-white px-3 py-1 rounded"
+        >
+          Add Achievement
+        </button>
+
+        {achievements.map((a, index) => (
+          <div key={index} className="text-sm">
+            {a.level} {a.medal_type} ({a.year})
+          </div>
+        ))}
+
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
           {loading ? "Registering..." : "Register Player"}
         </button>
