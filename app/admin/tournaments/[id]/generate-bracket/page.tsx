@@ -10,6 +10,7 @@ export default function GenerateBracketPage() {
   const tournamentId = params.id as string
 
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
 
   const handleGenerateBracket = async () => {
 
@@ -18,22 +19,33 @@ export default function GenerateBracketPage() {
     if (!confirmGenerate) return
 
     setLoading(true)
+    setMessage(null)
 
     try {
 
-      await generateBracket(tournamentId)
+      const result = await generateBracket(tournamentId)
 
-      alert("Bracket generated successfully!")
+      if (!result.success) {
+        setMessage(`⚠️ ${result.message}`)
+        return
+      }
 
-    } catch (error) {
+setMessage(`✅ ${result.message}`)
+
+    } catch (error: any) {
 
       console.error(error)
-      alert("Failed to generate bracket")
+
+      // ✅ Handle specific case
+      if (error?.message?.includes("No approved players")) {
+        setMessage("⚠️ No approved players")
+      } else {
+        setMessage("❌ Failed to generate bracket")
+      }
 
     }
 
     setLoading(false)
-
   }
 
   return (
@@ -48,10 +60,15 @@ export default function GenerateBracketPage() {
         disabled={loading}
         className="border px-4 py-2 rounded hover:bg-gray-100"
       >
-
         {loading ? "Generating..." : "Generate Bracket"}
-
       </button>
+
+      {/* ✅ UI Message */}
+      {message && (
+        <p className="mt-4 text-lg">
+          {message}
+        </p>
+      )}
 
     </div>
   )

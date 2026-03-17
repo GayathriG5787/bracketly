@@ -35,15 +35,68 @@ export default function MatchesPage() {
 
   const rounds = [...new Set(matches.map(m => m.round))]
 
+  // ✅ Show BYE or TBD properly
   const getPlayerName = (player: any, round: number) => {
-  if (player?.name) return player.name
+    if (player?.name) return player.name
+    if (round === 1) return "BYE"
+    return "TBD"
+  }
 
-  // Round 1 → missing player = BYE
-  if (round === 1) return "BYE"
+  // ✅ Handle winner selection
+  const handleWinner = async (match: any, winnerId: string) => {
 
-  // Future rounds → still unknown
-  return "TBD"
-}
+    // 1. Update current match
+    await supabase
+      .from("matches")
+      .update({
+        winner_id: winnerId,
+        walkover: false
+      })
+      .eq("id", match.id)
+
+    // 2. Move winner to next match
+    if (match.next_match_id) {
+
+      const updateField =
+        match.next_match_slot === 1 ? "player1_id" : "player2_id"
+
+      await supabase
+        .from("matches")
+        .update({
+          [updateField]: winnerId
+        })
+        .eq("id", match.next_match_id)
+    }
+
+    fetchMatches()
+  }
+
+  // ✅ Handle walkover (BYE)
+  const handleWalkover = async (match: any, winnerId: string) => {
+
+    await supabase
+      .from("matches")
+      .update({
+        winner_id: winnerId,
+        walkover: true
+      })
+      .eq("id", match.id)
+
+    if (match.next_match_id) {
+
+      const updateField =
+        match.next_match_slot === 1 ? "player1_id" : "player2_id"
+
+      await supabase
+        .from("matches")
+        .update({
+          [updateField]: winnerId
+        })
+        .eq("id", match.next_match_id)
+    }
+
+    fetchMatches()
+  }
 
   return (
     <div className="p-8">
@@ -66,7 +119,43 @@ export default function MatchesPage() {
 
               <div key={match.id} className="border p-3 mb-2 rounded">
 
-                {getPlayerName(match.player1, match.round)} vs {getPlayerName(match.player2, match.round)}
+                {/* Match Display */}
+                <div className="mb-2">
+                  {getPlayerName(match.player1, match.round)} vs {getPlayerName(match.player2, match.round)}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 flex-wrap">
+
+                  {match.player1 && (
+                    <button
+                      onClick={() => handleWinner(match, match.player1_id)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded"
+                    >
+                      {match.player1.name} Wins
+                    </button>
+                  )}
+
+                  {match.player2 && (
+                    <button
+                      onClick={() => handleWinner(match, match.player2_id)}
+                      className="bg-green-500 text-white px-3 py-1 rounded"
+                    >
+                      {match.player2.name} Wins
+                    </button>
+                  )}
+
+                  {/* Walkover (only when opponent missing) */}
+                  {(match.player1 && !match.player2) && (
+                    <button
+                      onClick={() => handleWalkover(match, match.player1_id)}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded"
+                    >
+                      Walkover
+                    </button>
+                  )}
+
+                </div>
 
               </div>
 

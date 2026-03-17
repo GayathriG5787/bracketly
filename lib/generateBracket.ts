@@ -16,7 +16,7 @@ export async function getApprovedPlayers(tournamentId: string) {
 
   if (error) {
     console.error("Error fetching players:", error)
-    return []
+    throw new Error("Failed to fetch players")
   }
 
   return data?.map((r: any) => r.players) || []
@@ -24,14 +24,12 @@ export async function getApprovedPlayers(tournamentId: string) {
 
 /*
 SHUFFLE PLAYERS
-(Fisher-Yates Shuffle)
 */
 function shuffle(players: any[]) {
 
   for (let i = players.length - 1; i > 0; i--) {
 
     const j = Math.floor(Math.random() * (i + 1))
-
     ;[players[i], players[j]] = [players[j], players[i]]
 
   }
@@ -41,8 +39,6 @@ function shuffle(players: any[]) {
 
 /*
 NEXT POWER OF TWO
-Example:
-10 players → 16 bracket
 */
 function nextPowerOfTwo(n: number) {
 
@@ -56,7 +52,7 @@ function nextPowerOfTwo(n: number) {
 }
 
 /*
-ADD BYE PLAYERS
+ADD BYES
 */
 function addByes(players: any[], bracketSize: number) {
 
@@ -70,7 +66,7 @@ function addByes(players: any[], bracketSize: number) {
 }
 
 /*
-CREATE FIRST ROUND MATCHES
+CREATE FIRST ROUND
 */
 function createRoundMatches(players: any[], round: number) {
 
@@ -79,13 +75,10 @@ function createRoundMatches(players: any[], round: number) {
   for (let i = 0; i < players.length; i += 2) {
 
     matches.push({
-
       round,
       position: i / 2,
-
       player1_id: players[i]?.id || null,
       player2_id: players[i + 1]?.id || null
-
     })
 
   }
@@ -95,12 +88,6 @@ function createRoundMatches(players: any[], round: number) {
 
 /*
 GENERATE ALL ROUNDS
-Example for 16 players:
-
-Round1 → 8 matches
-Round2 → 4 matches
-Round3 → 2 matches
-Round4 → 1 match
 */
 function generateAllRounds(bracketSize: number) {
 
@@ -114,26 +101,23 @@ function generateAllRounds(bracketSize: number) {
     const roundMatches: any[] = []
 
     for (let i = 0; i < matches; i++) {
-
       roundMatches.push({
         round,
         position: i
       })
-
     }
 
     rounds.push(roundMatches)
 
     matches = matches / 2
     round++
-
   }
 
   return rounds
 }
 
 /*
-LINK MATCHES TO NEXT ROUND
+LINK MATCHES
 */
 function linkMatches(rounds: any[]) {
 
@@ -151,11 +135,10 @@ function linkMatches(rounds: any[]) {
     })
 
   }
-
 }
 
 /*
-INSERT MATCHES INTO DATABASE
+INSERT MATCHES
 */
 export async function insertMatches(tournamentId: string, rounds: any[]) {
 
@@ -168,24 +151,21 @@ export async function insertMatches(tournamentId: string, rounds: any[]) {
       const { data, error } = await supabase
         .from("matches")
         .insert({
-
           tournament_id: tournamentId,
           round: match.round,
           position: match.position,
           player1_id: match.player1_id || null,
           player2_id: match.player2_id || null
-
         })
         .select()
         .single()
 
       if (error) {
         console.error("Error inserting match:", error)
-        continue
+        throw new Error("Failed to insert matches")
       }
 
       matchMap[`${match.round}-${match.position}`] = data.id
-
     }
 
   }
@@ -194,7 +174,7 @@ export async function insertMatches(tournamentId: string, rounds: any[]) {
 }
 
 /*
-UPDATE NEXT MATCH CONNECTIONS
+UPDATE NEXT MATCH LINKS
 */
 export async function updateNextMatches(rounds: any[], matchMap: any) {
 
@@ -205,23 +185,18 @@ export async function updateNextMatches(rounds: any[], matchMap: any) {
       if (match.next_match_position === undefined) continue
 
       const nextId = matchMap[`${match.round + 1}-${match.next_match_position}`]
-
       const currentId = matchMap[`${match.round}-${match.position}`]
 
       await supabase
         .from("matches")
         .update({
-
           next_match_id: nextId,
           next_match_slot: match.next_match_slot
-
         })
         .eq("id", currentId)
-
     }
 
   }
-
 }
 
 /*
@@ -237,15 +212,18 @@ async function lockBracket(tournamentId: string) {
 }
 
 /*
-MAIN BRACKET GENERATION FUNCTION
+MAIN FUNCTION
 */
 export async function generateBracket(tournamentId: string) {
 
   let players = await getApprovedPlayers(tournamentId)
 
-  if (players.length === 0) {
-    console.error("No approved players found")
-    return
+  // ✅ Handle gracefully (NO ERROR)
+  if (!players || players.length === 0) {
+    return {
+      success: false,
+      message: "No approved players"
+    }
   }
 
   players = shuffle(players)
@@ -268,4 +246,9 @@ export async function generateBracket(tournamentId: string) {
 
   await lockBracket(tournamentId)
 
+  // ✅ Success response
+  return {
+    success: true,
+    message: "Bracket generated successfully"
+  }
 }
