@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
-export default function RegistrationsPage() {
+export default function RegistrationsPage({ params }: any) {
+
+  const { id: tournamentId } = use(params) as { id: string }
 
   const [registrations, setRegistrations] = useState<any[]>([])
 
@@ -34,11 +36,12 @@ export default function RegistrationsPage() {
           )
         )
       `)
+      .eq("tournament_id", tournamentId) // ✅ IMPORTANT FIX
 
     if (error) {
       console.error(error)
     } else {
-      setRegistrations(data)
+      setRegistrations(data || [])
     }
   }
 
@@ -93,8 +96,6 @@ export default function RegistrationsPage() {
               <p><strong>Gender:</strong> {reg.players.gender}</p>
               <p><strong>Belt Rank:</strong> {reg.players.belt_rank}</p>
 
-              {/* PARTICIPATIONS */}
-
               <h3 className="font-semibold mt-4">
                 Participations
               </h3>
@@ -102,8 +103,6 @@ export default function RegistrationsPage() {
               <p>District: {districtCount}</p>
               <p>State: {stateCount}</p>
               <p>National: {nationalCount}</p>
-
-              {/* ACHIEVEMENTS */}
 
               <h3 className="font-semibold mt-4">
                 Achievements
