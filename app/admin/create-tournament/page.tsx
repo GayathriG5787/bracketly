@@ -8,12 +8,19 @@ export default function CreateTournament() {
   const [name, setName] = useState("")
   const [location, setLocation] = useState("")
   const [date, setDate] = useState("")
+  const [level, setLevel] = useState("") // ✅ NEW
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (loading) return
+
+    // ✅ Basic validation
+    if (!level) {
+      alert("Please select tournament level")
+      return
+    }
 
     setLoading(true)
 
@@ -22,12 +29,12 @@ export default function CreateTournament() {
       .insert({
         name,
         location,
-        tournament_date: date
+        tournament_date: date,
+        level // ✅ NEW
       })
 
     if (error) {
 
-      // PostgreSQL duplicate key error
       if (error.code === "23505") {
         alert("Tournament already created")
       } else {
@@ -43,6 +50,7 @@ export default function CreateTournament() {
       setName("")
       setLocation("")
       setDate("")
+      setLevel("") // ✅ RESET
     }
 
     setLoading(false)
@@ -79,6 +87,17 @@ export default function CreateTournament() {
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
+
+        {/* ✅ NEW: Tournament Level */}
+        <select
+          className="border p-2 w-full"
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+        >
+          <option value="">Select Tournament Level</option>
+          <option value="District">District</option>
+          <option value="State">State</option>
+        </select>
 
         <button
           type="submit"
