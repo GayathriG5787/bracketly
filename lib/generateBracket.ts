@@ -26,14 +26,10 @@ export async function getApprovedPlayers(tournamentId: string) {
 SHUFFLE PLAYERS
 */
 function shuffle(players: any[]) {
-
   for (let i = players.length - 1; i > 0; i--) {
-
     const j = Math.floor(Math.random() * (i + 1))
     ;[players[i], players[j]] = [players[j], players[i]]
-
   }
-
   return players
 }
 
@@ -41,13 +37,8 @@ function shuffle(players: any[]) {
 NEXT POWER OF TWO
 */
 function nextPowerOfTwo(n: number) {
-
   let power = 1
-
-  while (power < n) {
-    power *= 2
-  }
-
+  while (power < n) power *= 2
   return power
 }
 
@@ -55,13 +46,8 @@ function nextPowerOfTwo(n: number) {
 ADD BYES
 */
 function addByes(players: any[], bracketSize: number) {
-
   const byes = bracketSize - players.length
-
-  for (let i = 0; i < byes; i++) {
-    players.push(null)
-  }
-
+  for (let i = 0; i < byes; i++) players.push(null)
   return players
 }
 
@@ -73,14 +59,12 @@ function createRoundMatches(players: any[], round: number) {
   const matches: any[] = []
 
   for (let i = 0; i < players.length; i += 2) {
-
     matches.push({
       round,
       position: i / 2,
       player1_id: players[i]?.id || null,
       player2_id: players[i + 1]?.id || null
     })
-
   }
 
   return matches
@@ -101,10 +85,7 @@ function generateAllRounds(bracketSize: number) {
     const roundMatches: any[] = []
 
     for (let i = 0; i < matches; i++) {
-      roundMatches.push({
-        round,
-        position: i
-      })
+      roundMatches.push({ round, position: i })
     }
 
     rounds.push(roundMatches)
@@ -133,7 +114,6 @@ function linkMatches(rounds: any[]) {
       match.next_match_slot = match.position % 2 === 0 ? 1 : 2
 
     })
-
   }
 }
 
@@ -167,7 +147,6 @@ export async function insertMatches(tournamentId: string, rounds: any[]) {
 
       matchMap[`${match.round}-${match.position}`] = data.id
     }
-
   }
 
   return matchMap
@@ -195,7 +174,52 @@ export async function updateNextMatches(rounds: any[], matchMap: any) {
         })
         .eq("id", currentId)
     }
+  }
+}
 
+/*
+🔥 AUTO ADVANCE BYE MATCHES (NEW)
+*/
+async function autoAdvanceByes(tournamentId: string) {
+
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("*")
+    .eq("tournament_id", tournamentId)
+
+  if (!matches) return
+
+  for (const match of matches) {
+
+    if (
+      match.player1_id &&
+      !match.player2_id &&
+      !match.winner_id
+    ) {
+
+      // 1. Mark winner
+      await supabase
+        .from("matches")
+        .update({
+          winner_id: match.player1_id,
+          walkover: true
+        })
+        .eq("id", match.id)
+
+      // 2. Move to next match
+      if (match.next_match_id) {
+
+        const updateField =
+          match.next_match_slot === 1 ? "player1_id" : "player2_id"
+
+        await supabase
+          .from("matches")
+          .update({
+            [updateField]: match.player1_id
+          })
+          .eq("id", match.next_match_id)
+      }
+    }
   }
 }
 
@@ -203,12 +227,10 @@ export async function updateNextMatches(rounds: any[], matchMap: any) {
 LOCK BRACKET
 */
 async function lockBracket(tournamentId: string) {
-
   await supabase
     .from("tournaments")
     .update({ bracket_locked: true })
     .eq("id", tournamentId)
-
 }
 
 /*
@@ -218,7 +240,6 @@ export async function generateBracket(tournamentId: string) {
 
   let players = await getApprovedPlayers(tournamentId)
 
-  // ✅ Handle gracefully (NO ERROR)
   if (!players || players.length === 0) {
     return {
       success: false,
@@ -244,9 +265,11 @@ export async function generateBracket(tournamentId: string) {
 
   await updateNextMatches(rounds, matchMap)
 
+  // 🔥 NEW STEP (IMPORTANT)
+  await autoAdvanceByes(tournamentId)
+
   await lockBracket(tournamentId)
 
-  // ✅ Success response
   return {
     success: true,
     message: "Bracket generated successfully"
