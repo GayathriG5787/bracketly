@@ -275,6 +275,20 @@ export default function RegisterPlayer() {
       playerId = newPlayer.id
     }
 
+    // ✅ CHECK DUPLICATE REGISTRATION
+    const { data: existingRegistration } = await supabase
+      .from("registrations")
+      .select("*")
+      .eq("player_id", playerId)
+      .eq("tournament_id", tournamentId)
+      .maybeSingle()
+
+    if (existingRegistration) {
+      alert("You have already registered")
+      setLoading(false)
+      return
+    }
+
     // ✅ REGISTER
     await supabase.from("registrations").insert({
       player_id: playerId,
@@ -313,6 +327,24 @@ export default function RegisterPlayer() {
     }
 
     alert("Registration successful")
+
+    // ✅ RESET FORM
+    setName("")
+    setEmail("")
+    setPhone("")
+    setDistrict("")
+    setAge("")
+    setWeight("")
+    setGender("")
+    setBeltRank("")
+    setStudentType("")
+    setSchoolName("")
+    setCollegeName("")
+    setAcademy("")
+    setDistrictParticipations("")
+    setStateParticipations("")
+    setNationalParticipations("")
+    setAchievements([])
 
     setLoading(false)
   }
