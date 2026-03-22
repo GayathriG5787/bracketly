@@ -16,39 +16,20 @@ export default function TournamentAdminPage({ params }: any) {
 
       <div className="grid gap-4 max-w-md">
 
+        {/* ✅ View Registrations (with approve inside) */}
         <Link
           href={`/admin/tournaments/${tournamentId}/registrations`}
-          className="border p-3 rounded block"
+          className="border p-3 rounded block hover:bg-gray-100"
         >
           View Registrations
         </Link>
 
+        {/* ✅ Combined Bracket Control Panel */}
         <Link
-          href={`/admin/tournaments/${tournamentId}/approve-players`}
-          className="border p-3 rounded block"
+          href={`/admin/tournaments/${tournamentId}/brackets`}
+          className="border p-3 rounded block hover:bg-gray-100"
         >
-          Approve Players
-        </Link>
-
-        <Link
-          href={`/admin/tournaments/${tournamentId}/generate-bracket`}
-          className="border p-3 rounded block"
-        >
-          Generate Bracket
-        </Link>
-
-        <Link
-          href={`/admin/tournaments/${tournamentId}/matches`}
-          className="border p-3 rounded block"
-        >
-          Manage Matches
-        </Link>
-
-        <Link
-          href={`/tournaments/${tournamentId}/bracket`}
-          className="border p-3 rounded block"
-        >
-          View Bracket
+          Manage Brackets
         </Link>
 
       </div>
