@@ -23,15 +23,23 @@ export default function RegistrationsPage({ params }: any) {
         players (
           id,
           name,
+          email,
+          phone,
+          district,
           age,
           weight,
           gender,
           belt_rank,
-          email,
-          phone,
+
+          student_type,
+          school_name,
+          college_name,
+          academy,
+
           age_category,
           weight_category,
           category_key,
+
           player_achievements (
             level,
             medal_type,
@@ -217,18 +225,60 @@ registrations.forEach((reg) => {
                                 return (
                                   <div key={reg.id} className="border p-4 rounded">
 
+                                    <h3 className="font-semibold mb-2">Player Details</h3>
+
                                     <p><strong>Name:</strong> {reg.players.name}</p>
+                                    <p><strong>Email:</strong> {reg.players.email}</p>
+                                    <p><strong>Phone:</strong> {reg.players.phone}</p>
+                                    <p><strong>District:</strong> {reg.players.district}</p>
+
                                     <p><strong>Age:</strong> {reg.players.age}</p>
                                     <p><strong>Weight:</strong> {reg.players.weight}</p>
+                                    <p><strong>Gender:</strong> {reg.players.gender}</p>
+                                    <p><strong>Belt Rank:</strong> {reg.players.belt_rank}</p>
+
+                                    {/* 🎓 Background */}
+                                    <h4 className="font-semibold mt-3">Background</h4>
+
+                                    <p><strong>Student Type:</strong> {reg.players.student_type || "N/A"}</p>
+
+                                    {reg.players.school_name && (
+                                      <p><strong>School:</strong> {reg.players.school_name}</p>
+                                    )}
+
+                                    {reg.players.college_name && (
+                                      <p><strong>College:</strong> {reg.players.college_name}</p>
+                                    )}
+
+                                    {reg.players.academy && (
+                                      <p><strong>Academy:</strong> {reg.players.academy}</p>
+                                    )}
+
+                                    {/* 📊 Participations */}
+                                    <h4 className="font-semibold mt-3">Participations</h4>
 
                                     <p>District: {districtCount}</p>
                                     <p>State: {stateCount}</p>
                                     <p>National: {nationalCount}</p>
 
+                                    {/* 🏆 Achievements */}
+                                    <h4 className="font-semibold mt-3">Achievements</h4>
+
+                                    {reg.players.player_achievements.length === 0 && (
+                                      <p>No achievements</p>
+                                    )}
+
+                                    {reg.players.player_achievements.map((ach:any, index:number) => (
+                                      <p key={index}>
+                                        {ach.level} {ach.medal_type} ({ach.year})
+                                      </p>
+                                    ))}
+
+                                    {/* ✅ Approval */}
                                     {!reg.approved && (
                                       <button
                                         onClick={() => approvePlayer(reg.id, reg.players)}
-                                        className="bg-green-600 text-white px-3 py-1 rounded mt-2"
+                                        className="bg-green-600 text-white px-3 py-1 rounded mt-3"
                                       >
                                         Approve
                                       </button>
