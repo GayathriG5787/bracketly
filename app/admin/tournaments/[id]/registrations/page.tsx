@@ -10,6 +10,8 @@ export default function RegistrationsPage({ params }: any) {
 
   const [registrations, setRegistrations] = useState<any[]>([])
   const [openCategory, setOpenCategory] = useState<string | null>(null)
+  const [openAge, setOpenAge] = useState<string | null>(null)
+  const [openWeight, setOpenWeight] = useState<string | null>(null)
 
   const fetchRegistrations = async () => {
 
@@ -128,24 +130,18 @@ const grouped: any = {}
 
 registrations.forEach((reg) => {
   const p = reg.players
-
   if (!p?.category_key) return
 
-  if (!grouped[p.category_key]) {
-    grouped[p.category_key] = {
-      category: {
-        age: p.age_category,
-        gender: p.gender,
-        weight: p.weight_category
-      },
-      players: []
-    }
-  }
+  const gender = p.gender
+  const age = p.age_category
+  const weight = p.weight_category
 
-  grouped[p.category_key].players.push(reg)
+  if (!grouped[gender]) grouped[gender] = {}
+  if (!grouped[gender][age]) grouped[gender][age] = {}
+  if (!grouped[gender][age][weight]) grouped[gender][age][weight] = []
+
+  grouped[gender][age][weight].push(reg)
 })
-
-const groupedArray = Object.entries(grouped)
 
   return (
     <div className="p-8">
@@ -163,100 +159,107 @@ const groupedArray = Object.entries(grouped)
 
       <div className="space-y-6">
 
-{groupedArray.map(([key, group]: any) => {
+      {Object.entries(grouped).map(([gender, ageGroups]: any) => (
 
-  return (
+        <div key={gender} className="mb-6">
 
-    <div key={key} className="border p-4 rounded">
+          {/* GENDER HEADER */}
+          <h2 className="text-xl font-bold mb-2">{gender}</h2>
 
-    <div
-      onClick={() => setOpenCategory(openCategory === key ? null : key)}
-      className="cursor-pointer bg-gray-100 p-3 rounded flex justify-between items-center"
-    >
-      <span>
-        {group.category.age} - {group.category.gender} - {group.category.weight}
-        ({group.players.length})
-      </span>
+          {Object.entries(ageGroups).map(([age, weightGroups]: any) => {
 
-      <span>
-        {openCategory === key ? "▲" : "▼"}
-      </span>
-    </div>
+            const ageKey = `${gender}-${age}`
 
-      {openCategory === key && (
-        <div className="mt-4 space-y-4">
-          {group.players.map((reg: any) => {
+            return (
+              <div key={ageKey} className="mb-3">
 
-        const participations = reg.players.player_participations || []
+                {/* AGE ACCORDION */}
+                <div
+                  onClick={() => setOpenAge(openAge === ageKey ? null : ageKey)}
+                  className="cursor-pointer bg-gray-200 p-3 rounded flex justify-between"
+                >
+                  <span>{age}</span>
+                  <span>{openAge === ageKey ? "▲" : "▼"}</span>
+                </div>
 
-        const districtCount = participations.filter((p:any) => p.level === "district").length
-        const stateCount = participations.filter((p:any) => p.level === "state").length
-        const nationalCount = participations.filter((p:any) => p.level === "national").length
+                {/* WEIGHT LEVEL */}
+                {openAge === ageKey && (
+                  <div className="ml-4 mt-2 space-y-2">
 
-        return (
+                    {Object.entries(weightGroups).map(([weight, players]: any) => {
 
-          <div key={reg.id} className="border p-4 rounded mb-4">
+                      const weightKey = `${ageKey}-${weight}`
 
-            <h3 className="text-md font-semibold mb-2">
-              Player Details
-            </h3>
+                      return (
+                        <div key={weightKey}>
 
-            <p><strong>Name:</strong> {reg.players.name}</p>
-            <p><strong>Email:</strong> {reg.players.email}</p>
-            <p><strong>Phone:</strong> {reg.players.phone}</p>
-            <p><strong>Age:</strong> {reg.players.age}</p>
-            <p><strong>Weight:</strong> {reg.players.weight}</p>
-            <p><strong>Gender:</strong> {reg.players.gender}</p>
-            <p><strong>Belt Rank:</strong> {reg.players.belt_rank}</p>
+                          {/* WEIGHT ACCORDION */}
+                          <div
+                            onClick={() => setOpenWeight(openWeight === weightKey ? null : weightKey)}
+                            className="cursor-pointer bg-gray-100 p-2 rounded flex justify-between"
+                          >
+                            <span>{weight} ({players.length})</span>
+                            <span>{openWeight === weightKey ? "▲" : "▼"}</span>
+                          </div>
 
-            <h4 className="font-semibold mt-4">
-              Participations
-            </h4>
+                          {/* PLAYERS */}
+                          {openWeight === weightKey && (
+                            <div className="ml-4 mt-2 space-y-2">
 
-            <p>District: {districtCount}</p>
-            <p>State: {stateCount}</p>
-            <p>National: {nationalCount}</p>
+                              {players.map((reg: any) => {
 
-            <h4 className="font-semibold mt-4">
-              Achievements
-            </h4>
+                                const participations = reg.players.player_participations || []
 
-            {reg.players.player_achievements.length === 0 && (
-              <p>No achievements</p>
-            )}
+                                const districtCount = participations.filter((p:any) => p.level === "district").length
+                                const stateCount = participations.filter((p:any) => p.level === "state").length
+                                const nationalCount = participations.filter((p:any) => p.level === "national").length
 
-            {reg.players.player_achievements.map((ach:any, index:number) => (
-              <p key={index}>
-                {ach.level} {ach.medal_type} ({ach.year})
-              </p>
-            ))}
+                                return (
+                                  <div key={reg.id} className="border p-4 rounded">
 
-            {!reg.approved && (
-              <button
-                onClick={() => approvePlayer(reg.id, reg.players)}
-                className="bg-green-600 text-white px-3 py-1 rounded mt-4"
-              >
-                Approve
-              </button>
-            )}
+                                    <p><strong>Name:</strong> {reg.players.name}</p>
+                                    <p><strong>Age:</strong> {reg.players.age}</p>
+                                    <p><strong>Weight:</strong> {reg.players.weight}</p>
 
-            {reg.approved && (
-              <span className="text-green-600 font-semibold mt-4 block">
-                Approved
-              </span>
-            )}
+                                    <p>District: {districtCount}</p>
+                                    <p>State: {stateCount}</p>
+                                    <p>National: {nationalCount}</p>
 
-          </div>
+                                    {!reg.approved && (
+                                      <button
+                                        onClick={() => approvePlayer(reg.id, reg.players)}
+                                        className="bg-green-600 text-white px-3 py-1 rounded mt-2"
+                                      >
+                                        Approve
+                                      </button>
+                                    )}
 
-        )
-    })}
-  </div>
-)}
+                                    {reg.approved && (
+                                      <span className="text-green-600 font-semibold block mt-2">
+                                        Approved
+                                      </span>
+                                    )}
 
-    </div>
+                                  </div>
+                                )
+                              })}
 
-  )
-})}
+                            </div>
+                          )}
+
+                        </div>
+                      )
+                    })}
+
+                  </div>
+                )}
+
+              </div>
+            )
+          })}
+
+        </div>
+      ))}
 
       </div>
 
