@@ -3,7 +3,10 @@ import { supabase } from "./supabase"
 /*
 FETCH APPROVED PLAYERS
 */
-export async function getApprovedPlayers(tournamentId: string) {
+export async function getApprovedPlayers(
+  tournamentId: string,
+  categoryKey: string
+) {
 
   const { data, error } = await supabase
     .from("registrations")
@@ -13,6 +16,7 @@ export async function getApprovedPlayers(tournamentId: string) {
     `)
     .eq("tournament_id", tournamentId)
     .eq("approved", true)
+    .eq("players.category_key", categoryKey)
 
   if (error) {
     console.error("Error fetching players:", error)
@@ -69,7 +73,11 @@ function distributeByes(players: any[], bracketSize: number) {
 /*
 CREATE FIRST ROUND
 */
-function createRoundMatches(players: any[], round: number) {
+function createRoundMatches(
+  players: any[],
+  round: number,
+  categoryKey: string
+) {
 
   const matches: any[] = []
 
@@ -77,6 +85,7 @@ function createRoundMatches(players: any[], round: number) {
     matches.push({
       round,
       position: i / 2,
+      category_key: categoryKey,
       player1_id: players[i]?.id || null,
       player2_id: players[i + 1]?.id || null
     })
@@ -84,7 +93,6 @@ function createRoundMatches(players: any[], round: number) {
 
   return matches
 }
-
 /*
 GENERATE ALL ROUNDS
 */
@@ -147,6 +155,7 @@ export async function insertMatches(tournamentId: string, rounds: any[]) {
         .from("matches")
         .insert({
           tournament_id: tournamentId,
+          category_key: match.category_key,
           round: match.round,
           position: match.position,
           player1_id: match.player1_id || null,
@@ -195,12 +204,16 @@ export async function updateNextMatches(rounds: any[], matchMap: any) {
 /*
 🔥 AUTO ADVANCE BYE MATCHES (NEW)
 */
-async function autoAdvanceByes(tournamentId: string) {
+async function autoAdvanceByes(
+  tournamentId: string,
+  categoryKey: string
+) {
 
   const { data: matches } = await supabase
     .from("matches")
     .select("*")
     .eq("tournament_id", tournamentId)
+    .eq("category_key", categoryKey) // ✅ Filter by category
 
   if (!matches) return
 
@@ -212,7 +225,7 @@ async function autoAdvanceByes(tournamentId: string) {
       !match.winner_id
     ) {
 
-      // 1. Mark winner
+      // 1. Mark winner (auto win due to BYE)
       await supabase
         .from("matches")
         .update({
@@ -221,7 +234,7 @@ async function autoAdvanceByes(tournamentId: string) {
         })
         .eq("id", match.id)
 
-      // 2. Move to next match
+      // 2. Move winner to next match (same category implicitly)
       if (match.next_match_id) {
 
         const updateField =
@@ -241,19 +254,26 @@ async function autoAdvanceByes(tournamentId: string) {
 /*
 LOCK BRACKET
 */
-async function lockBracket(tournamentId: string) {
+async function lockBracket(
+  tournamentId: string,
+  categoryKey: string
+) {
   await supabase
-    .from("tournaments")
+    .from("matches")
     .update({ bracket_locked: true })
-    .eq("id", tournamentId)
+    .eq("tournament_id", tournamentId)
+    .eq("category_key", categoryKey)
 }
 
 /*
 MAIN FUNCTION
 */
-export async function generateBracket(tournamentId: string) {
+export async function generateBracket(
+  tournamentId: string,
+  categoryKey: string
+) {
 
-  let players = await getApprovedPlayers(tournamentId)
+  let players = await getApprovedPlayers(tournamentId, categoryKey)
 
   if (!players || players.length === 0) {
     return {
@@ -268,7 +288,7 @@ export async function generateBracket(tournamentId: string) {
 
   players = distributeByes(players, bracketSize)
 
-  const firstRound = createRoundMatches(players, 1)
+  const firstRound = createRoundMatches(players, 1, categoryKey)
 
   const rounds = generateAllRounds(bracketSize)
 
@@ -280,10 +300,9 @@ export async function generateBracket(tournamentId: string) {
 
   await updateNextMatches(rounds, matchMap)
 
-  // 🔥 NEW STEP (IMPORTANT)
-  await autoAdvanceByes(tournamentId)
+  await autoAdvanceByes(tournamentId, categoryKey)
 
-  await lockBracket(tournamentId)
+  await lockBracket(tournamentId, categoryKey)
 
   return {
     success: true,
