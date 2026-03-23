@@ -42,13 +42,28 @@ function nextPowerOfTwo(n: number) {
   return power
 }
 
-/*
-ADD BYES
-*/
-function addByes(players: any[], bracketSize: number) {
-  const byes = bracketSize - players.length
-  for (let i = 0; i < byes; i++) players.push(null)
-  return players
+function distributeByes(players: any[], bracketSize: number) {
+  const totalByes = bracketSize - players.length
+
+  // Step 1: Create slots
+  const slots: any[] = new Array(bracketSize).fill(null)
+
+  // Step 2: Fill players in even positions first
+  let pIndex = 0
+  for (let i = 0; i < bracketSize; i += 2) {
+    if (pIndex < players.length) {
+      slots[i] = players[pIndex++]
+    }
+  }
+
+  // Step 3: Fill remaining players in odd positions
+  for (let i = 1; i < bracketSize; i += 2) {
+    if (pIndex < players.length) {
+      slots[i] = players[pIndex++]
+    }
+  }
+
+  return slots
 }
 
 /*
@@ -251,7 +266,7 @@ export async function generateBracket(tournamentId: string) {
 
   const bracketSize = nextPowerOfTwo(players.length)
 
-  players = addByes(players, bracketSize)
+  players = distributeByes(players, bracketSize)
 
   const firstRound = createRoundMatches(players, 1)
 
