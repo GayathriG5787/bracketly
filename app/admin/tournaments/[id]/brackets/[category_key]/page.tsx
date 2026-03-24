@@ -29,6 +29,9 @@ export default function BracketViewPage() {
         player1_id,
         player2_id,
         winner_id,
+        next_match_id,
+        next_match_slot,
+        walkover,
         player1:player1_id ( name ),
         player2:player2_id ( name )
       `)
@@ -43,7 +46,6 @@ export default function BracketViewPage() {
       return
     }
 
-    // ✅ Group matches by round
     const grouped: Record<number, any[]> = {}
 
     data.forEach((match: any) => {
@@ -55,6 +57,72 @@ export default function BracketViewPage() {
 
     setRounds(grouped)
     setLoading(false)
+  }
+
+  // ✅ Select Winner
+  const handleSelectWinner = async (match: any, playerId: string) => {
+    if (match.winner_id) return
+
+    if (!confirm("Confirm winner?")) return
+
+    try {
+      // 1. Update winner
+      await supabase
+        .from("matches")
+        .update({ winner_id: playerId, walkover: false })
+        .eq("id", match.id)
+
+      // 2. Move to next match
+      if (match.next_match_id) {
+        const field =
+          match.next_match_slot === 1 ? "player1_id" : "player2_id"
+
+        await supabase
+          .from("matches")
+          .update({ [field]: playerId })
+          .eq("id", match.next_match_id)
+      }
+
+      fetchMatches()
+    } catch (err) {
+      console.error(err)
+      alert("Error updating winner")
+    }
+  }
+
+  // ✅ Walkover
+  const handleWalkover = async (match: any) => {
+    let winnerId = null
+
+    if (match.player1_id && !match.player2_id) {
+      winnerId = match.player1_id
+    } else if (!match.player1_id && match.player2_id) {
+      winnerId = match.player2_id
+    } else {
+      alert("Cannot mark walkover. Select winner manually.")
+      return
+    }
+
+    try {
+      await supabase
+        .from("matches")
+        .update({ winner_id: winnerId, walkover: true })
+        .eq("id", match.id)
+
+      if (match.next_match_id) {
+        const field =
+          match.next_match_slot === 1 ? "player1_id" : "player2_id"
+
+        await supabase
+          .from("matches")
+          .update({ [field]: winnerId })
+          .eq("id", match.next_match_id)
+      }
+
+      fetchMatches()
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   if (loading) {
@@ -77,12 +145,10 @@ export default function BracketViewPage() {
           return (
             <div key={round} className="flex flex-col gap-6">
 
-              {/* ROUND TITLE */}
               <h2 className="text-center font-semibold">
                 Round {roundNumber}
               </h2>
 
-              {/* MATCHES */}
               {matches.map((match: any) => {
 
                 const isP1Winner = match.winner_id === match.player1_id
@@ -95,9 +161,17 @@ export default function BracketViewPage() {
                   >
 
                     {/* PLAYER 1 */}
-                    <div className={`p-1 border-b ${
-                      isP1Winner ? "font-bold text-green-600" : ""
-                    }`}>
+                    <div
+                      onClick={() =>
+                        match.player1_id &&
+                        handleSelectWinner(match, match.player1_id)
+                      }
+                      className={`p-1 border-b cursor-pointer ${
+                        isP1Winner
+                          ? "font-bold text-green-600"
+                          : "hover:bg-gray-100"
+                      }`}
+                    >
                       {match.player1
                         ? match.player1.name
                         : match.round === 1
@@ -106,15 +180,31 @@ export default function BracketViewPage() {
                     </div>
 
                     {/* PLAYER 2 */}
-                    <div className={`p-1 ${
-                      isP2Winner ? "font-bold text-green-600" : ""
-                    }`}>
+                    <div
+                      onClick={() =>
+                        match.player2_id &&
+                        handleSelectWinner(match, match.player2_id)
+                      }
+                      className={`p-1 cursor-pointer ${
+                        isP2Winner
+                          ? "font-bold text-green-600"
+                          : "hover:bg-gray-100"
+                      }`}
+                    >
                       {match.player2
                         ? match.player2.name
                         : match.round === 1
                         ? "BYE"
                         : "TBD"}
                     </div>
+
+                    {/* WALKOVER BUTTON */}
+                    <button
+                      onClick={() => handleWalkover(match)}
+                      className="text-xs text-red-500 mt-2"
+                    >
+                      Mark Walkover
+                    </button>
 
                   </div>
                 )
