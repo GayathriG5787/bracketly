@@ -162,15 +162,17 @@ export default function BracketViewPage() {
 
                     {/* PLAYER 1 */}
                     <div
-                      onClick={() =>
-                        match.player1_id &&
+                    onClick={() => {
+                        if (!match.player1_id || !match.player2_id) return
                         handleSelectWinner(match, match.player1_id)
-                      }
-                      className={`p-1 border-b cursor-pointer ${
-                        isP1Winner
-                          ? "font-bold text-green-600"
-                          : "hover:bg-gray-100"
-                      }`}
+                    }}
+                    className={`p-1 border-b ${
+                        !match.player1_id || !match.player2_id
+                        ? "text-gray-400 cursor-not-allowed"
+                        : isP1Winner
+                        ? "font-bold text-green-600"
+                        : "cursor-pointer hover:bg-gray-100"
+                    }`}
                     >
                       {match.player1
                         ? match.player1.name
@@ -181,15 +183,17 @@ export default function BracketViewPage() {
 
                     {/* PLAYER 2 */}
                     <div
-                      onClick={() =>
-                        match.player2_id &&
+                    onClick={() => {
+                        if (!match.player1_id || !match.player2_id) return
                         handleSelectWinner(match, match.player2_id)
-                      }
-                      className={`p-1 cursor-pointer ${
-                        isP2Winner
-                          ? "font-bold text-green-600"
-                          : "hover:bg-gray-100"
-                      }`}
+                    }}
+                    className={`p-1 ${
+                        !match.player1_id || !match.player2_id
+                        ? "text-gray-400 cursor-not-allowed"
+                        : isP2Winner
+                        ? "font-bold text-green-600"
+                        : "cursor-pointer hover:bg-gray-100"
+                    }`}
                     >
                       {match.player2
                         ? match.player2.name
