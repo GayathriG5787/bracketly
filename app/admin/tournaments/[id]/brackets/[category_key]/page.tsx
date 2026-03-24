@@ -98,14 +98,22 @@ export default function BracketViewPage() {
                     <div className={`p-1 border-b ${
                       isP1Winner ? "font-bold text-green-600" : ""
                     }`}>
-                      {match.player1?.name || "TBD"}
+                      {match.player1
+                        ? match.player1.name
+                        : match.round === 1
+                        ? "BYE"
+                        : "TBD"}
                     </div>
 
                     {/* PLAYER 2 */}
                     <div className={`p-1 ${
                       isP2Winner ? "font-bold text-green-600" : ""
                     }`}>
-                      {match.player2?.name || "TBD"}
+                      {match.player2
+                        ? match.player2.name
+                        : match.round === 1
+                        ? "BYE"
+                        : "TBD"}
                     </div>
 
                   </div>
