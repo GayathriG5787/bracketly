@@ -90,41 +90,6 @@ export default function BracketViewPage() {
     }
   }
 
-  // ✅ Walkover
-  const handleWalkover = async (match: any) => {
-    let winnerId = null
-
-    if (match.player1_id && !match.player2_id) {
-      winnerId = match.player1_id
-    } else if (!match.player1_id && match.player2_id) {
-      winnerId = match.player2_id
-    } else {
-      alert("Cannot mark walkover. Select winner manually.")
-      return
-    }
-
-    try {
-      await supabase
-        .from("matches")
-        .update({ winner_id: winnerId, walkover: true })
-        .eq("id", match.id)
-
-      if (match.next_match_id) {
-        const field =
-          match.next_match_slot === 1 ? "player1_id" : "player2_id"
-
-        await supabase
-          .from("matches")
-          .update({ [field]: winnerId })
-          .eq("id", match.next_match_id)
-      }
-
-      fetchMatches()
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   if (loading) {
     return <div className="p-8">Loading bracket...</div>
   }
@@ -201,14 +166,6 @@ export default function BracketViewPage() {
                         ? "BYE"
                         : "TBD"}
                     </div>
-
-                    {/* WALKOVER BUTTON */}
-                    <button
-                      onClick={() => handleWalkover(match)}
-                      className="text-xs text-red-500 mt-2"
-                    >
-                      Mark Walkover
-                    </button>
 
                   </div>
                 )
