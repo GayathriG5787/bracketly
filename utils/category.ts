@@ -1,4 +1,5 @@
 // utils/category.ts
+import { getCategoryKey } from "@/lib/categoryKey"
 
 // ✅ AGE CATEGORY (based on 2025 rules)
 export function getAgeCategory(age: number): string {
@@ -158,7 +159,12 @@ export function getCategory(player: Player) {
     player.gender
   )
 
-  const category_key = `${age_category}_${player.gender}_${weight_category}`
+    // ✅ FIXED (IMPORTANT)
+  const category_key = getCategoryKey(
+    age_category,
+    player.gender,
+    weight_category
+  )
 
   return { age_category, weight_category, category_key }
 }

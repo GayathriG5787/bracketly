@@ -16,7 +16,7 @@ export async function getApprovedPlayers(
     `)
     .eq("tournament_id", tournamentId)
     .eq("approved", true)
-    .eq("players.category_key", categoryKey)
+    .eq("category_key", categoryKey) // ✅ THIS IS THE FIX
 
   if (error) {
     console.error("Error fetching players:", error)
@@ -96,7 +96,7 @@ function createRoundMatches(
 /*
 GENERATE ALL ROUNDS
 */
-function generateAllRounds(bracketSize: number) {
+function generateAllRounds(bracketSize: number, categoryKey: string) {
 
   const rounds: any[] = []
 
@@ -108,7 +108,11 @@ function generateAllRounds(bracketSize: number) {
     const roundMatches: any[] = []
 
     for (let i = 0; i < matches; i++) {
-      roundMatches.push({ round, position: i })
+      roundMatches.push({
+        round,
+        position: i,
+        category_key: categoryKey // ✅ FIX
+      })
     }
 
     rounds.push(roundMatches)
@@ -150,6 +154,10 @@ export async function insertMatches(tournamentId: string, rounds: any[]) {
   for (const round of rounds) {
 
     for (const match of round) {
+
+      if (!match.category_key) {
+        throw new Error("Missing category_key in match")
+      }
 
       const { data, error } = await supabase
         .from("matches")
@@ -273,6 +281,22 @@ export async function generateBracket(
   categoryKey: string
 ) {
 
+  console.log("🚀 generateBracket called", tournamentId, categoryKey)
+  // Checking whether bracket already exists
+
+  const { data: existing } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("tournament_id", tournamentId)
+    .eq("category_key", categoryKey)
+
+  if (existing && existing.length > 0) {
+    return {
+      success: false,
+      message: "Bracket already exists"
+    }
+  }
+
   let players = await getApprovedPlayers(tournamentId, categoryKey)
 
   if (!players || players.length === 0) {
@@ -290,11 +314,18 @@ export async function generateBracket(
 
   const firstRound = createRoundMatches(players, 1, categoryKey)
 
-  const rounds = generateAllRounds(bracketSize)
+  const rounds = generateAllRounds(bracketSize, categoryKey)
 
   rounds[0] = firstRound
 
   linkMatches(rounds)
+
+  console.log("TOTAL ROUNDS:", rounds.length)
+
+  let totalMatches = 0
+  for (const r of rounds) totalMatches += r.length
+
+  console.log("TOTAL MATCHES:", totalMatches)
 
   const matchMap = await insertMatches(tournamentId, rounds)
 

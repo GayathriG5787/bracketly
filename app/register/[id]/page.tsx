@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
+import { getCategoryKey } from "@/lib/categoryKey"
 
 export default function RegisterPlayer() {
 
@@ -292,7 +293,9 @@ export default function RegisterPlayer() {
     // ✅ REGISTER
     await supabase.from("registrations").insert({
       player_id: playerId,
-      tournament_id: tournamentId
+      tournament_id: tournamentId,
+      category_key: getCategoryKey(ageCategory, gender, weightCategory), // ✅ MUST
+      approved: false
     })
 
     // ✅ ACHIEVEMENTS INSERT

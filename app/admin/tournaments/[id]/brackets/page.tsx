@@ -75,9 +75,11 @@ export default function BracketsPage({ params }: any) {
   })
 
   // 🔥 UPDATED GENERATE HANDLER
-  const handleGenerate = async (gender: string, age: string, weight: string) => {
+  const handleGenerate = async (players: any[]) => {
 
-    const categoryKey = `${gender}-${age}-${weight}`
+    if (!players || players.length === 0) return
+
+  const categoryKey = players[0].category_key
 
     // 🚫 Prevent multiple clicks
     if (loadingCategory === categoryKey) return
@@ -143,7 +145,7 @@ export default function BracketsPage({ params }: any) {
                       {Object.entries(weightGroups).map(([weight, players]: any) => {
 
                         const weightKey = `${ageKey}-${weight}`
-                        const categoryKey = `${gender}-${age}-${weight}`
+                        const categoryKey = players[0]?.category_key
 
                         const isLoading = loadingCategory === categoryKey
                         const isGenerated = generatedCategories.has(categoryKey)
@@ -163,7 +165,7 @@ export default function BracketsPage({ params }: any) {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  handleGenerate(gender, age, weight)
+                                  handleGenerate(players)
                                 }}
                                 disabled={isLoading}
                                 className={`px-3 py-1 rounded text-white ${
