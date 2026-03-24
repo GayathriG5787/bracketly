@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { generateBracket } from "@/lib/generateBracket"
+import { useRouter } from "next/navigation"
 
 export default function BracketsPage({ params }: any) {
 
@@ -12,8 +13,13 @@ export default function BracketsPage({ params }: any) {
   const [openAge, setOpenAge] = useState<string | null>(null)
   const [openWeight, setOpenWeight] = useState<string | null>(null)
 
-  const fetchRegistrations = async () => {
+  // 🔥 NEW STATES
+  const [loadingCategory, setLoadingCategory] = useState<string | null>(null)
+  const [generatedCategories, setGeneratedCategories] = useState<Set<string>>(new Set())
 
+  const router = useRouter()
+
+  const fetchRegistrations = async () => {
     const { data, error } = await supabase
       .from("registrations")
       .select(`
@@ -30,30 +36,36 @@ export default function BracketsPage({ params }: any) {
       `)
       .eq("tournament_id", tournamentId)
 
-    if (error) {
-      console.error(error)
-    } else {
-      setRegistrations(data || [])
-    }
+    if (error) console.error(error)
+    else setRegistrations(data || [])
+  }
+
+  // 🔥 FETCH GENERATED CATEGORIES
+  const fetchGeneratedCategories = async () => {
+    const { data } = await supabase
+      .from("matches")
+      .select("category_key")
+      .eq("tournament_id", tournamentId)
+
+    const set = new Set(data?.map((m: any) => m.category_key))
+    setGeneratedCategories(set)
   }
 
   useEffect(() => {
     fetchRegistrations()
+    fetchGeneratedCategories()
   }, [])
 
-  // ✅ GROUP DATA (same as registrations page)
+  // ✅ GROUP DATA
   const grouped: any = {}
 
   registrations.forEach((reg) => {
-
-    if (!reg.approved) return // ✅ ONLY approved players
+    if (!reg.approved) return
 
     const p = reg.players
     if (!p?.category_key) return
 
-    const gender = p.gender
-    const age = p.age_category
-    const weight = p.weight_category
+    const { gender, age_category: age, weight_category: weight } = p
 
     if (!grouped[gender]) grouped[gender] = {}
     if (!grouped[gender][age]) grouped[gender][age] = {}
@@ -62,18 +74,36 @@ export default function BracketsPage({ params }: any) {
     grouped[gender][age][weight].push(p)
   })
 
-  // ✅ GENERATE BRACKET HANDLER
-  const handleGenerate = async (
-    gender: string,
-    age: string,
-    weight: string
-  ) => {
+  // 🔥 UPDATED GENERATE HANDLER
+  const handleGenerate = async (gender: string, age: string, weight: string) => {
 
     const categoryKey = `${gender}-${age}-${weight}`
 
+    // 🚫 Prevent multiple clicks
+    if (loadingCategory === categoryKey) return
+
+    // 🚫 Already generated → go to view
+    if (generatedCategories.has(categoryKey)) {
+      router.push(`/admin/tournaments/${tournamentId}/brackets/${categoryKey}`)
+      return
+    }
+
+    setLoadingCategory(categoryKey)
+
     const res = await generateBracket(tournamentId, categoryKey)
 
-    alert(res.message)
+    setLoadingCategory(null)
+
+    if (!res.success) {
+      alert(res.message)
+      return
+    }
+
+    // ✅ Mark as generated
+    setGeneratedCategories(prev => new Set(prev).add(categoryKey))
+
+    // 🚀 Redirect
+    router.push(`/admin/tournaments/${tournamentId}/brackets/${categoryKey}`)
   }
 
   return (
@@ -113,6 +143,10 @@ export default function BracketsPage({ params }: any) {
                       {Object.entries(weightGroups).map(([weight, players]: any) => {
 
                         const weightKey = `${ageKey}-${weight}`
+                        const categoryKey = `${gender}-${age}-${weight}`
+
+                        const isLoading = loadingCategory === categoryKey
+                        const isGenerated = generatedCategories.has(categoryKey)
 
                         return (
                           <div key={weightKey}>
@@ -128,13 +162,25 @@ export default function BracketsPage({ params }: any) {
 
                               <button
                                 onClick={(e) => {
-                                  e.stopPropagation() // 🔥 prevent accordion toggle
+                                  e.stopPropagation()
                                   handleGenerate(gender, age, weight)
                                 }}
-                                className="bg-blue-600 text-white px-3 py-1 rounded"
+                                disabled={isLoading}
+                                className={`px-3 py-1 rounded text-white ${
+                                  isLoading
+                                    ? "bg-gray-400"
+                                    : isGenerated
+                                    ? "bg-green-600"
+                                    : "bg-blue-600"
+                                }`}
                               >
-                                Generate Bracket
+                                {isLoading
+                                  ? "Generating..."
+                                  : isGenerated
+                                  ? "View Bracket"
+                                  : "Generate Bracket"}
                               </button>
+
                             </div>
 
                             {/* PLAYERS */}
