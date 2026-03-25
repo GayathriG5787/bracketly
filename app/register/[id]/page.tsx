@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
-import { getCategoryKey } from "@/lib/categoryKey"
+import { getCategory } from "@/utils/category" // ✅ NEW
 
 export default function RegisterPlayer() {
 
@@ -21,158 +21,21 @@ export default function RegisterPlayer() {
   const [gender, setGender] = useState("")
   const [beltRank, setBeltRank] = useState("")
 
-  // ✅ NEW CONTEXT FIELDS
   const [studentType, setStudentType] = useState("")
   const [schoolName, setSchoolName] = useState("")
   const [collegeName, setCollegeName] = useState("")
   const [academy, setAcademy] = useState("")
 
-  // ✅ PARTICIPATIONS
   const [districtParticipations, setDistrictParticipations] = useState("")
   const [stateParticipations, setStateParticipations] = useState("")
   const [nationalParticipations, setNationalParticipations] = useState("")
 
-  // ✅ ACHIEVEMENTS
   const [achievements, setAchievements] = useState<any[]>([])
   const [level, setLevel] = useState("")
   const [medalType, setMedalType] = useState("")
   const [year, setYear] = useState("")
 
   const [loading, setLoading] = useState(false)
-
-  function getCategory(age: number, weight: number, gender: string) {
-
-  let ageCategory = ""
-  let weightCategory = ""
-
-  if (age <= 7) {
-    ageCategory = "Infant"
-
-    if (weight <= 17) weightCategory = "Under 17"
-    else if (weight <= 19) weightCategory = "Under 19"
-    else if (weight <= 21) weightCategory = "Under 21"
-    else if (weight <= 23) weightCategory = "Under 23"
-    else weightCategory = "Over 23"
-  }
-
-  else if (age <= 11) {
-    ageCategory = "Sub-Junior"
-
-    if (gender === "Male") {
-      if (weight <= 16) weightCategory = "Under 16"
-      else if (weight <= 18) weightCategory = "Under 18"
-      else if (weight <= 21) weightCategory = "Under 21"
-      else if (weight <= 23) weightCategory = "Under 23"
-      else if (weight <= 25) weightCategory = "Under 25"
-      else if (weight <= 27) weightCategory = "Under 27"
-      else if (weight <= 29) weightCategory = "Under 29"
-      else if (weight <= 32) weightCategory = "Under 32"
-      else if (weight <= 35) weightCategory = "Under 35"
-      else if (weight <= 38) weightCategory = "Under 38"
-      else if (weight <= 41) weightCategory = "Under 41"
-      else if (weight <= 44) weightCategory = "Under 44"
-      else if (weight <= 50) weightCategory = "Under 50"
-      else weightCategory = "Over 50"
-    } else {
-      if (weight <= 14) weightCategory = "Under 14"
-      else if (weight <= 16) weightCategory = "Under 16"
-      else if (weight <= 18) weightCategory = "Under 18"
-      else if (weight <= 20) weightCategory = "Under 20"
-      else if (weight <= 22) weightCategory = "Under 22"
-      else if (weight <= 24) weightCategory = "Under 24"
-      else if (weight <= 26) weightCategory = "Under 26"
-      else if (weight <= 29) weightCategory = "Under 29"
-      else if (weight <= 32) weightCategory = "Under 32"
-      else if (weight <= 35) weightCategory = "Under 35"
-      else if (weight <= 38) weightCategory = "Under 38"
-      else if (weight <= 41) weightCategory = "Under 41"
-      else if (weight <= 47) weightCategory = "Under 47"
-      else weightCategory = "Over 47"
-    }
-  }
-
-  else if (age <= 14) {
-    ageCategory = "Cadet"
-
-    if (gender === "Male") {
-      if (weight <= 33) weightCategory = "Under 33"
-      else if (weight <= 37) weightCategory = "Under 37"
-      else if (weight <= 41) weightCategory = "Under 41"
-      else if (weight <= 45) weightCategory = "Under 45"
-      else if (weight <= 49) weightCategory = "Under 49"
-      else if (weight <= 53) weightCategory = "Under 53"
-      else if (weight <= 57) weightCategory = "Under 57"
-      else if (weight <= 61) weightCategory = "Under 61"
-      else if (weight <= 65) weightCategory = "Under 65"
-      else weightCategory = "Over 65"
-    } else {
-      if (weight <= 29) weightCategory = "Under 29"
-      else if (weight <= 33) weightCategory = "Under 33"
-      else if (weight <= 37) weightCategory = "Under 37"
-      else if (weight <= 41) weightCategory = "Under 41"
-      else if (weight <= 44) weightCategory = "Under 44"
-      else if (weight <= 47) weightCategory = "Under 47"
-      else if (weight <= 51) weightCategory = "Under 51"
-      else if (weight <= 55) weightCategory = "Under 55"
-      else if (weight <= 59) weightCategory = "Under 59"
-      else weightCategory = "Over 59"
-    }
-  }
-
-  else if (age <= 17) {
-    ageCategory = "Junior"
-
-    if (gender === "Male") {
-      if (weight <= 45) weightCategory = "Under 45"
-      else if (weight <= 48) weightCategory = "Under 48"
-      else if (weight <= 51) weightCategory = "Under 51"
-      else if (weight <= 55) weightCategory = "Under 55"
-      else if (weight <= 59) weightCategory = "Under 59"
-      else if (weight <= 63) weightCategory = "Under 63"
-      else if (weight <= 68) weightCategory = "Under 68"
-      else if (weight <= 73) weightCategory = "Under 73"
-      else if (weight <= 78) weightCategory = "Under 78"
-      else weightCategory = "Over 78"
-    } else {
-      if (weight <= 42) weightCategory = "Under 42"
-      else if (weight <= 44) weightCategory = "Under 44"
-      else if (weight <= 46) weightCategory = "Under 46"
-      else if (weight <= 49) weightCategory = "Under 49"
-      else if (weight <= 52) weightCategory = "Under 52"
-      else if (weight <= 55) weightCategory = "Under 55"
-      else if (weight <= 59) weightCategory = "Under 59"
-      else if (weight <= 63) weightCategory = "Under 63"
-      else if (weight <= 68) weightCategory = "Under 68"
-      else weightCategory = "Over 68"
-    }
-  }
-
-  else {
-    ageCategory = "Senior"
-
-    if (gender === "Male") {
-      if (weight <= 54) weightCategory = "Under 54"
-      else if (weight <= 58) weightCategory = "Under 58"
-      else if (weight <= 63) weightCategory = "Under 63"
-      else if (weight <= 68) weightCategory = "Under 68"
-      else if (weight <= 74) weightCategory = "Under 74"
-      else if (weight <= 80) weightCategory = "Under 80"
-      else if (weight <= 87) weightCategory = "Under 87"
-      else weightCategory = "Over 87"
-    } else {
-      if (weight <= 46) weightCategory = "Under 46"
-      else if (weight <= 49) weightCategory = "Under 49"
-      else if (weight <= 53) weightCategory = "Under 53"
-      else if (weight <= 57) weightCategory = "Under 57"
-      else if (weight <= 62) weightCategory = "Under 62"
-      else if (weight <= 67) weightCategory = "Under 67"
-      else if (weight <= 73) weightCategory = "Under 73"
-      else weightCategory = "Over 73"
-    }
-  }
-
-  return { ageCategory, weightCategory }
-}
 
   useEffect(() => {
 
@@ -221,11 +84,12 @@ export default function RegisterPlayer() {
 
     let playerId
 
-    const { ageCategory, weightCategory } = getCategory(
-      Number(age),
-      Number(weight),
+    // ✅ USE CENTRALIZED CATEGORY LOGIC
+    const { age_category, weight_category, category_key } = getCategory({
+      age: Number(age),
+      weight: Number(weight),
       gender
-    )
+    })
 
     if (existingPlayer) {
 
@@ -236,8 +100,8 @@ export default function RegisterPlayer() {
         .update({
           age: Number(age),
           weight: Number(weight),
-          age_category: ageCategory,
-          weight_category: weightCategory
+          age_category,
+          weight_category
         })
         .eq("id", playerId)
     } else {
@@ -254,11 +118,10 @@ export default function RegisterPlayer() {
           gender,
           belt_rank: beltRank,
 
-          // ✅ ADD HERE
-          age_category: ageCategory,
-          weight_category: weightCategory,
+          // ✅ CATEGORY FROM UTILS
+          age_category,
+          weight_category,
 
-          // ✅ CONTEXT DATA
           student_type: studentType,
           school_name: studentType === "school" ? schoolName : null,
           college_name: studentType === "college" ? collegeName : null,
@@ -276,7 +139,6 @@ export default function RegisterPlayer() {
       playerId = newPlayer.id
     }
 
-    // ✅ CHECK DUPLICATE REGISTRATION
     const { data: existingRegistration } = await supabase
       .from("registrations")
       .select("*")
@@ -290,15 +152,14 @@ export default function RegisterPlayer() {
       return
     }
 
-    // ✅ REGISTER
+    // ✅ USE category_key FROM UTILS
     await supabase.from("registrations").insert({
       player_id: playerId,
       tournament_id: tournamentId,
-      category_key: getCategoryKey(ageCategory, gender, weightCategory), // ✅ MUST
+      category_key, // ✅ FIXED
       approved: false
     })
 
-    // ✅ ACHIEVEMENTS INSERT
     if (achievements.length > 0) {
       const rows = achievements.map(a => ({
         player_id: playerId,
@@ -310,7 +171,6 @@ export default function RegisterPlayer() {
       await supabase.from("player_achievements").insert(rows)
     }
 
-    // ✅ PARTICIPATIONS INSERT
     const participationRows: any[] = []
 
     for (let i = 0; i < Number(districtParticipations || 0); i++) {
@@ -331,7 +191,7 @@ export default function RegisterPlayer() {
 
     alert("Registration successful")
 
-    // ✅ RESET FORM
+    // RESET
     setName("")
     setEmail("")
     setPhone("")
@@ -354,7 +214,6 @@ export default function RegisterPlayer() {
 
   return (
     <div className="p-8 max-w-md">
-
       <h1 className="text-2xl font-bold mb-2">
         Player Registration
       </h1>
@@ -482,7 +341,6 @@ export default function RegisterPlayer() {
         </button>
 
       </form>
-
     </div>
   )
 }

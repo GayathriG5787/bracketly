@@ -1,7 +1,7 @@
 // utils/category.ts
 import { getCategoryKey } from "@/lib/categoryKey"
 
-// ✅ AGE CATEGORY (based on 2025 rules)
+// ✅ AGE CATEGORY
 export function getAgeCategory(age: number): string {
   if (age <= 7) return "Infant"
   if (age >= 8 && age <= 11) return "Sub-Junior"
@@ -16,8 +16,17 @@ export function getWeightCategory(
   gender: string
 ): string {
 
-  // ✅ INFANT (same for all)
-  if (ageCategory === "Infant") {
+  // ✅ INFANT BOYS
+  if (ageCategory === "Infant" && gender === "Male") {
+    if (weight <= 17) return "Under 17kg"
+    if (weight <= 19) return "Under 19kg"
+    if (weight <= 21) return "Under 21kg"
+    if (weight <= 23) return "Under 23kg"
+    return "Over 23kg"
+  }
+
+  // ✅ INFANT GIRLS
+  if (ageCategory === "Infant" && gender === "Female") {
     if (weight <= 17) return "Under 17kg"
     if (weight <= 19) return "Under 19kg"
     if (weight <= 21) return "Under 21kg"
@@ -159,7 +168,6 @@ export function getCategory(player: Player) {
     player.gender
   )
 
-    // ✅ FIXED (IMPORTANT)
   const category_key = getCategoryKey(
     age_category,
     player.gender,
