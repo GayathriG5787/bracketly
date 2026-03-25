@@ -13,14 +13,40 @@ export default function BracketsPage({ params }: any) {
   const [openAge, setOpenAge] = useState<string | null>(null)
   const [openWeight, setOpenWeight] = useState<string | null>(null)
 
-  // 🔥 NEW STATES
   const [loadingCategory, setLoadingCategory] = useState<string | null>(null)
   const [generatedCategories, setGeneratedCategories] = useState<Set<string>>(new Set())
 
   const router = useRouter()
 
+  // ✅ ORDER DEFINITIONS
+  const AGE_ORDER = ["Infant", "Sub-Junior", "Cadet", "Junior", "Senior"]
+
+  const WEIGHT_ORDER: any = {
+    Infant: ["Under 17kg","Under 19kg","Under 21kg","Under 23kg","Over 23kg"],
+
+    "Sub-Junior": {
+      Male: ["Under 16kg","Under 18kg","Under 21kg","Under 23kg","Under 25kg","Under 27kg","Under 29kg","Under 32kg","Under 35kg","Under 38kg","Under 41kg","Under 44kg","Under 50kg","Over 50kg"],
+      Female: ["Under 14kg","Under 16kg","Under 18kg","Under 20kg","Under 22kg","Under 24kg","Under 26kg","Under 29kg","Under 32kg","Under 35kg","Under 38kg","Under 41kg","Under 47kg","Over 47kg"]
+    },
+
+    Cadet: {
+      Male: ["Under 33kg","Under 37kg","Under 41kg","Under 45kg","Under 49kg","Under 53kg","Under 57kg","Under 61kg","Under 65kg","Over 65kg"],
+      Female: ["Under 29kg","Under 33kg","Under 37kg","Under 41kg","Under 44kg","Under 47kg","Under 51kg","Under 55kg","Under 59kg","Over 59kg"]
+    },
+
+    Junior: {
+      Male: ["Under 45kg","Under 48kg","Under 51kg","Under 55kg","Under 59kg","Under 63kg","Under 68kg","Under 73kg","Under 78kg","Over 78kg"],
+      Female: ["Under 42kg","Under 44kg","Under 46kg","Under 49kg","Under 52kg","Under 55kg","Under 59kg","Under 63kg","Under 68kg","Over 68kg"]
+    },
+
+    Senior: {
+      Male: ["Under 54kg","Under 58kg","Under 63kg","Under 68kg","Under 74kg","Under 80kg","Under 87kg","Over 87kg"],
+      Female: ["Under 46kg","Under 49kg","Under 53kg","Under 57kg","Under 62kg","Under 67kg","Under 73kg","Over 73kg"]
+    }
+  }
+
   const fetchRegistrations = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("registrations")
       .select(`
         id,
@@ -36,19 +62,16 @@ export default function BracketsPage({ params }: any) {
       `)
       .eq("tournament_id", tournamentId)
 
-    if (error) console.error(error)
-    else setRegistrations(data || [])
+    setRegistrations(data || [])
   }
 
-  // 🔥 FETCH GENERATED CATEGORIES
   const fetchGeneratedCategories = async () => {
     const { data } = await supabase
       .from("matches")
       .select("category_key")
       .eq("tournament_id", tournamentId)
 
-    const set = new Set(data?.map((m: any) => m.category_key))
-    setGeneratedCategories(set)
+    setGeneratedCategories(new Set(data?.map((m: any) => m.category_key)))
   }
 
   useEffect(() => {
@@ -56,7 +79,7 @@ export default function BracketsPage({ params }: any) {
     fetchGeneratedCategories()
   }, [])
 
-  // ✅ GROUP DATA
+  // ✅ GROUPING
   const grouped: any = {}
 
   registrations.forEach((reg) => {
@@ -74,17 +97,11 @@ export default function BracketsPage({ params }: any) {
     grouped[gender][age][weight].push(p)
   })
 
-  // 🔥 UPDATED GENERATE HANDLER
   const handleGenerate = async (players: any[]) => {
+    const categoryKey = players[0].category_key
 
-    if (!players || players.length === 0) return
-
-  const categoryKey = players[0].category_key
-
-    // 🚫 Prevent multiple clicks
     if (loadingCategory === categoryKey) return
 
-    // 🚫 Already generated → go to view
     if (generatedCategories.has(categoryKey)) {
       router.push(`/admin/tournaments/${tournamentId}/brackets/${categoryKey}`)
       return
@@ -101,67 +118,65 @@ export default function BracketsPage({ params }: any) {
       return
     }
 
-    // ✅ Mark as generated
     setGeneratedCategories(prev => new Set(prev).add(categoryKey))
 
-    // 🚀 Redirect
     router.push(`/admin/tournaments/${tournamentId}/brackets/${categoryKey}`)
   }
 
   return (
     <div className="p-8">
 
-      <h1 className="text-2xl font-bold mb-6">
-        Manage Brackets
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Manage Brackets</h1>
 
-      <div className="space-y-6">
+      {["Male", "Female"].map((gender) => (
 
-        {Object.entries(grouped).map(([gender, ageGroups]: any) => (
+        <div key={gender} className="mb-6">
 
-          <div key={gender} className="mb-6">
+          <h2 className="text-xl font-bold mb-2">{gender}</h2>
 
-            <h2 className="text-xl font-bold mb-2">{gender}</h2>
+          {AGE_ORDER.map((age) => {
 
-            {Object.entries(ageGroups).map(([age, weightGroups]: any) => {
+            const ageGroups = grouped[gender]?.[age] || {} // ✅ FIXED
 
-              const ageKey = `${gender}-${age}`
+            const ageKey = `${gender}-${age}`
 
-              return (
-                <div key={ageKey} className="mb-3">
+            return (
+              <div key={ageKey} className="mb-3">
 
-                  {/* AGE ACCORDION */}
-                  <div
-                    onClick={() => setOpenAge(openAge === ageKey ? null : ageKey)}
-                    className="cursor-pointer bg-gray-200 p-3 rounded flex justify-between"
-                  >
-                    <span>{age}</span>
-                    <span>{openAge === ageKey ? "▲" : "▼"}</span>
-                  </div>
+                <div
+                  onClick={() => setOpenAge(openAge === ageKey ? null : ageKey)}
+                  className="cursor-pointer bg-gray-200 p-3 rounded flex justify-between"
+                >
+                  <span>{age}</span>
+                  <span>{openAge === ageKey ? "▲" : "▼"}</span>
+                </div>
 
-                  {openAge === ageKey && (
-                    <div className="ml-4 mt-2 space-y-2">
+                {openAge === ageKey && (
+                  <div className="ml-4 mt-2 space-y-2">
 
-                      {Object.entries(weightGroups).map(([weight, players]: any) => {
+                    {(Array.isArray(WEIGHT_ORDER[age])
+                      ? WEIGHT_ORDER[age]
+                      : WEIGHT_ORDER[age][gender]
+                    ).map((weight: string) => {
 
-                        const weightKey = `${ageKey}-${weight}`
-                        const categoryKey = players[0]?.category_key
+                      const players = ageGroups?.[weight] || [] // ✅ FIXED
 
-                        const isLoading = loadingCategory === categoryKey
-                        const isGenerated = generatedCategories.has(categoryKey)
+                      const weightKey = `${ageKey}-${weight}`
+                      const categoryKey = players[0]?.category_key
 
-                        return (
-                          <div key={weightKey}>
+                      const isLoading = loadingCategory === categoryKey
+                      const isGenerated = generatedCategories.has(categoryKey)
 
-                            {/* WEIGHT HEADER + BUTTON */}
-                            <div
-                              onClick={() => setOpenWeight(openWeight === weightKey ? null : weightKey)}
-                              className="cursor-pointer bg-gray-100 p-2 rounded flex justify-between items-center"
-                            >
-                              <span>
-                                {weight} ({players.length})
-                              </span>
+                      return (
+                        <div key={weightKey}>
 
+                          <div
+                            onClick={() => setOpenWeight(openWeight === weightKey ? null : weightKey)}
+                            className="cursor-pointer bg-gray-100 p-2 rounded flex justify-between items-center"
+                          >
+                            <span>{weight} ({players.length})</span>
+
+                            {players.length > 1 && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -182,37 +197,33 @@ export default function BracketsPage({ params }: any) {
                                   ? "View Bracket"
                                   : "Generate Bracket"}
                               </button>
-
-                            </div>
-
-                            {/* PLAYERS */}
-                            {openWeight === weightKey && (
-                              <div className="ml-4 mt-2 space-y-1">
-
-                                {players.map((p: any) => (
-                                  <div key={p.id} className="border p-2 rounded">
-                                    {p.name}
-                                  </div>
-                                ))}
-
-                              </div>
                             )}
 
                           </div>
-                        )
-                      })}
 
-                    </div>
-                  )}
+                          {openWeight === weightKey && players.length > 0 && (
+                            <div className="ml-4 mt-2 space-y-1">
+                              {players.map((p: any) => (
+                                <div key={p.id} className="border p-2 rounded">
+                                  {p.name}
+                                </div>
+                              ))}
+                            </div>
+                          )}
 
-                </div>
-              )
-            })}
+                        </div>
+                      )
+                    })}
 
-          </div>
-        ))}
+                  </div>
+                )}
 
-      </div>
+              </div>
+            )
+          })}
+
+        </div>
+      ))}
 
     </div>
   )
