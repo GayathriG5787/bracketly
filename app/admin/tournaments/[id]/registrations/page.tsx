@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { getCategory } from "@/utils/category" // ✅ NEW
+import { getCategory } from "@/utils/category"
 
 export default function RegistrationsPage({ params }: any) {
 
@@ -13,8 +13,34 @@ export default function RegistrationsPage({ params }: any) {
   const [openAge, setOpenAge] = useState<string | null>(null)
   const [openWeight, setOpenWeight] = useState<string | null>(null)
 
-  const fetchRegistrations = async () => {
+  // ✅ ORDER DEFINITIONS (NEW)
+  const AGE_ORDER = ["Infant", "Sub-Junior", "Cadet", "Junior", "Senior"]
 
+  const WEIGHT_ORDER: any = {
+    Infant: ["Under 17kg","Under 19kg","Under 21kg","Under 23kg","Over 23kg"],
+
+    "Sub-Junior": {
+      Male: ["Under 16kg","Under 18kg","Under 21kg","Under 23kg","Under 25kg","Under 27kg","Under 29kg","Under 32kg","Under 35kg","Under 38kg","Under 41kg","Under 44kg","Under 50kg","Over 50kg"],
+      Female: ["Under 14kg","Under 16kg","Under 18kg","Under 20kg","Under 22kg","Under 24kg","Under 26kg","Under 29kg","Under 32kg","Under 35kg","Under 38kg","Under 41kg","Under 47kg","Over 47kg"]
+    },
+
+    Cadet: {
+      Male: ["Under 33kg","Under 37kg","Under 41kg","Under 45kg","Under 49kg","Under 53kg","Under 57kg","Under 61kg","Under 65kg","Over 65kg"],
+      Female: ["Under 29kg","Under 33kg","Under 37kg","Under 41kg","Under 44kg","Under 47kg","Under 51kg","Under 55kg","Under 59kg","Over 59kg"]
+    },
+
+    Junior: {
+      Male: ["Under 45kg","Under 48kg","Under 51kg","Under 55kg","Under 59kg","Under 63kg","Under 68kg","Under 73kg","Under 78kg","Over 78kg"],
+      Female: ["Under 42kg","Under 44kg","Under 46kg","Under 49kg","Under 52kg","Under 55kg","Under 59kg","Under 63kg","Under 68kg","Over 68kg"]
+    },
+
+    Senior: {
+      Male: ["Under 54kg","Under 58kg","Under 63kg","Under 68kg","Under 74kg","Under 80kg","Under 87kg","Over 87kg"],
+      Female: ["Under 46kg","Under 49kg","Under 53kg","Under 57kg","Under 62kg","Under 67kg","Under 73kg","Over 73kg"]
+    }
+  }
+
+  const fetchRegistrations = async () => {
     const { data, error } = await supabase
       .from("registrations")
       .select(`
@@ -30,126 +56,59 @@ export default function RegistrationsPage({ params }: any) {
           weight,
           gender,
           belt_rank,
-
           student_type,
           school_name,
           college_name,
           academy,
-
           age_category,
           weight_category,
           category_key,
-
-          player_achievements (
-            level,
-            medal_type,
-            year
-          ),
-          player_participations (
-            level,
-            year
-          )
+          player_achievements (level, medal_type, year),
+          player_participations (level, year)
         )
       `)
       .eq("tournament_id", tournamentId)
 
-    if (error) {
-      console.error(error)
-    } else {
-      setRegistrations(data || [])
-    }
+    if (!error) setRegistrations(data || [])
   }
 
   useEffect(() => {
     fetchRegistrations()
   }, [])
 
-  // ✅ UPDATED APPROVE LOGIC (STEP 3 IMPLEMENTED)
   const approvePlayer = async (regId: string, player: any) => {
-
-    // 🔹 1. Generate category
     const { age_category, weight_category, category_key } = getCategory(player)
 
-    // 🔹 2. Update PLAYER table (IMPORTANT)
-    const { error: playerError } = await supabase
-      .from("players")
-      .update({
-        age_category,
-        weight_category,
-        category_key
-      })
-      .eq("id", player.id)
+    await supabase.from("players").update({
+      age_category,
+      weight_category,
+      category_key
+    }).eq("id", player.id)
 
-    if (playerError) {
-      console.error(playerError)
-      return
-    }
-
-    // 🔹 3. Mark registration as approved
-    const { error: regError } = await supabase
-      .from("registrations")
+    await supabase.from("registrations")
       .update({ approved: true })
       .eq("id", regId)
 
-    if (regError) {
-      console.error(regError)
-    } else {
-      fetchRegistrations()
-    }
+    fetchRegistrations()
   }
 
-// Temporary thing, remove it later
+  // ✅ GROUPING (UNCHANGED)
+  const grouped: any = {}
 
-const backfillCategories = async () => {
-  const { data: players, error } = await supabase
-    .from("players")
-    .select("*")
+  registrations.forEach((reg) => {
+    const p = reg.players
+    if (!p?.category_key) return
 
-  if (error) {
-    console.error(error)
-    return
-  }
+    const gender = p.gender
+    const age = p.age_category
+    const weight = p.weight_category
 
-  const updates = players.map((player) => {
-    const { age_category, weight_category, category_key } = getCategory(player)
+    if (!grouped[gender]) grouped[gender] = {}
+    if (!grouped[gender][age]) grouped[gender][age] = {}
+    if (!grouped[gender][age][weight]) grouped[gender][age][weight] = []
 
-    return supabase
-      .from("players")
-      .update({
-        age_category,
-        weight_category,
-        category_key
-      })
-      .eq("id", player.id)
+    grouped[gender][age][weight].push(reg)
   })
-
-  const results = await Promise.all(updates)
-
-  results.forEach((res, index) => {
-    if (res.error) {
-      console.error(`Error updating player ${players[index].id}`, res.error)
-    }
-  })
-
-  console.log("✅ Backfill completed")
-}
-
-const grouped: any = {}
-
-registrations.forEach((reg) => {
-  const p = reg.players
-  if (!p?.category_key) return
-
-  const gender = p.gender
-  const age = p.age_category
-  const weight = p.weight_category
-
-  if (!grouped[gender]) grouped[gender] = {}
-  if (!grouped[gender][age]) grouped[gender][age] = {}
-  if (!grouped[gender][age][weight]) grouped[gender][age][weight] = []
-
-  grouped[gender][age][weight].push(reg)
-})
 
   return (
     <div className="p-8">
@@ -158,30 +117,22 @@ registrations.forEach((reg) => {
         Player Registrations
       </h1>
 
-      <button
-        onClick={backfillCategories}
-        className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
-      >
-        Run Category Backfill
-      </button>
-
       <div className="space-y-6">
 
-      {Object.entries(grouped).map(([gender, ageGroups]: any) => (
+      {["Male","Female"].map((gender) => (
 
         <div key={gender} className="mb-6">
 
-          {/* GENDER HEADER */}
           <h2 className="text-xl font-bold mb-2">{gender}</h2>
 
-          {Object.entries(ageGroups).map(([age, weightGroups]: any) => {
+          {AGE_ORDER.map((age) => {
 
+            const ageGroups = grouped[gender]?.[age] || {} // ✅ FIXED
             const ageKey = `${gender}-${age}`
 
             return (
               <div key={ageKey} className="mb-3">
 
-                {/* AGE ACCORDION */}
                 <div
                   onClick={() => setOpenAge(openAge === ageKey ? null : ageKey)}
                   className="cursor-pointer bg-gray-200 p-3 rounded flex justify-between"
@@ -190,18 +141,20 @@ registrations.forEach((reg) => {
                   <span>{openAge === ageKey ? "▲" : "▼"}</span>
                 </div>
 
-                {/* WEIGHT LEVEL */}
                 {openAge === ageKey && (
                   <div className="ml-4 mt-2 space-y-2">
 
-                    {Object.entries(weightGroups).map(([weight, players]: any) => {
+                    {(Array.isArray(WEIGHT_ORDER[age])
+                      ? WEIGHT_ORDER[age]
+                      : WEIGHT_ORDER[age][gender]
+                    ).map((weight: string) => {
 
+                      const players = ageGroups?.[weight] || [] // ✅ FIXED
                       const weightKey = `${ageKey}-${weight}`
 
                       return (
                         <div key={weightKey}>
 
-                          {/* WEIGHT ACCORDION */}
                           <div
                             onClick={() => setOpenWeight(openWeight === weightKey ? null : weightKey)}
                             className="cursor-pointer bg-gray-100 p-2 rounded flex justify-between"
@@ -210,8 +163,7 @@ registrations.forEach((reg) => {
                             <span>{openWeight === weightKey ? "▲" : "▼"}</span>
                           </div>
 
-                          {/* PLAYERS */}
-                          {openWeight === weightKey && (
+                          {openWeight === weightKey && players.length > 0 && (
                             <div className="ml-4 mt-2 space-y-2">
 
                               {players.map((reg: any) => {
@@ -225,6 +177,7 @@ registrations.forEach((reg) => {
                                 return (
                                   <div key={reg.id} className="border p-4 rounded">
 
+                                    {/* ✅ YOUR ORIGINAL UI (UNCHANGED) */}
                                     <h3 className="font-semibold mb-2">Player Details</h3>
 
                                     <p><strong>Name:</strong> {reg.players.name}</p>
@@ -237,7 +190,6 @@ registrations.forEach((reg) => {
                                     <p><strong>Gender:</strong> {reg.players.gender}</p>
                                     <p><strong>Belt Rank:</strong> {reg.players.belt_rank}</p>
 
-                                    {/* 🎓 Background */}
                                     <h4 className="font-semibold mt-3">Background</h4>
 
                                     <p><strong>Student Type:</strong> {reg.players.student_type || "N/A"}</p>
@@ -254,14 +206,12 @@ registrations.forEach((reg) => {
                                       <p><strong>Academy:</strong> {reg.players.academy}</p>
                                     )}
 
-                                    {/* 📊 Participations */}
                                     <h4 className="font-semibold mt-3">Participations</h4>
 
                                     <p>District: {districtCount}</p>
                                     <p>State: {stateCount}</p>
                                     <p>National: {nationalCount}</p>
 
-                                    {/* 🏆 Achievements */}
                                     <h4 className="font-semibold mt-3">Achievements</h4>
 
                                     {reg.players.player_achievements.length === 0 && (
@@ -274,7 +224,6 @@ registrations.forEach((reg) => {
                                       </p>
                                     ))}
 
-                                    {/* ✅ Approval */}
                                     {!reg.approved && (
                                       <button
                                         onClick={() => approvePlayer(reg.id, reg.players)}
