@@ -172,21 +172,55 @@ export default function RegisterPlayer() {
     }
 
     const participationRows: any[] = []
+    const currentYear = new Date().getFullYear()
 
-    for (let i = 0; i < Number(districtParticipations || 0); i++) {
-      participationRows.push({ player_id: playerId, level: "district" })
-    }
+    const levels = [
+      { count: districtParticipations, level: "district" },
+      { count: stateParticipations, level: "state" },
+      { count: nationalParticipations, level: "national" }
+    ]
 
-    for (let i = 0; i < Number(stateParticipations || 0); i++) {
-      participationRows.push({ player_id: playerId, level: "state" })
-    }
+    // 🔍 DEBUG: raw input values
+    // console.log("Raw Inputs:", {
+    //   districtParticipations,
+    //   stateParticipations,
+    //   nationalParticipations
+    // })
 
-    for (let i = 0; i < Number(nationalParticipations || 0); i++) {
-      participationRows.push({ player_id: playerId, level: "national" })
-    }
+    levels.forEach(({ count, level }) => {
+      const parsedCount = parseInt(count) || 0
+
+      // 🔍 DEBUG: parsed values
+      // console.log(`Parsed count for ${level}:`, parsedCount)
+
+      for (let i = 0; i < parsedCount; i++) {
+        participationRows.push({
+          player_id: playerId,
+          level,
+          year: currentYear
+        })
+      }
+    })
+
+    // 🔍 DEBUG: final rows
+    // console.log("FINAL participationRows:", participationRows)
 
     if (participationRows.length > 0) {
-      await supabase.from("player_participations").insert(participationRows)
+      const { data, error } = await supabase
+        .from("player_participations")
+        .insert(participationRows)
+        .select()
+
+      // 🔍 DEBUG: DB response
+      // console.log("Insert Data:", data)
+      // console.log("Insert Error (raw):", error)
+      // console.log("Insert Error (stringified):", JSON.stringify(error, null, 2))
+
+      if (error) {
+        alert("Participation insert failed")
+      }
+    } else {
+      console.warn("No participation rows to insert ❗")
     }
 
     alert("Registration successful")
