@@ -46,6 +46,7 @@ export default function RegistrationsPage({ params }: any) {
       .select(`
         id,
         approved,
+        category_key,
         players (
           id,
           name,
@@ -62,14 +63,15 @@ export default function RegistrationsPage({ params }: any) {
           academy,
           age_category,
           weight_category,
-          category_key,
           player_achievements (level, medal_type, year),
           player_participations (level, year)
         )
       `)
       .eq("tournament_id", tournamentId)
+      
 
     if (!error) setRegistrations(data || [])
+      
   }
 
   useEffect(() => {
@@ -79,16 +81,35 @@ export default function RegistrationsPage({ params }: any) {
   const approvePlayer = async (regId: string, player: any) => {
     const { age_category, weight_category, category_key } = getCategory(player)
 
-    await supabase.from("players").update({
-      age_category,
-      weight_category,
-      category_key
-    }).eq("id", player.id)
+    // ✅ Update player (ONLY category details that belong to player)
+    const { error: playerError } = await supabase
+      .from("players")
+      .update({
+        age_category,
+        weight_category
+      })
+      .eq("id", player.id)
 
-    await supabase.from("registrations")
-      .update({ approved: true })
+    if (playerError) {
+      console.error("Player update error:", playerError)
+      return
+    }
+
+    // ✅ Update registration (category_key + approval)
+    const { error: regError } = await supabase
+      .from("registrations")
+      .update({
+        category_key,
+        approved: true
+      })
       .eq("id", regId)
 
+    if (regError) {
+      console.error("Registration update error:", regError)
+      return
+    }
+
+    // 🔄 Refresh UI
     fetchRegistrations()
   }
 
@@ -96,8 +117,10 @@ export default function RegistrationsPage({ params }: any) {
   const grouped: any = {}
 
   registrations.forEach((reg) => {
-    const p = reg.players
-    if (!p?.category_key) return
+  const p = reg.players
+  const categoryKey = reg.category_key  // ✅ FIX
+
+  if (!categoryKey) return  
 
     const gender = p.gender
     const age = p.age_category
