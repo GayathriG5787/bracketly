@@ -45,39 +45,44 @@ export default function BracketsPage({ params }: any) {
     }
   }
 
-  const fetchRegistrations = async () => {
-    const { data } = await supabase
-      .from("registrations")
-      .select(`
-        id,
-        approved,
-        players (
+    const fetchRegistrations = async () => {
+      const { data, error } = await supabase
+        .from("registrations")
+        .select(`
           id,
-          name,
-          gender,
-          age_category,
-          weight_category,
-          category_key
-        )
-      `)
-      .eq("tournament_id", tournamentId)
+          approved,
+          category_key,
+          players (
+            id,
+            name,
+            gender,
+            age_category,
+            weight_category
+          )
+        `)
+        .eq("tournament_id", tournamentId)
 
-    setRegistrations(data || [])
-  }
+      if (error) {
+        console.error("Fetch error:", error)
+        return
+      }
+      
+      setRegistrations(data || [])
+    }
 
   const fetchGeneratedCategories = async () => {
-    const { data } = await supabase
-      .from("matches")
-      .select("category_key")
-      .eq("tournament_id", tournamentId)
+  const { data } = await supabase
+    .from("matches")
+    .select("category_key")
+    .eq("tournament_id", tournamentId)
 
-    setGeneratedCategories(new Set(data?.map((m: any) => m.category_key)))
-  }
+  setGeneratedCategories(new Set(data?.map((m: any) => m.category_key)))
+}
 
-  useEffect(() => {
-    fetchRegistrations()
-    fetchGeneratedCategories()
-  }, [])
+useEffect(() => {
+  fetchRegistrations()
+  fetchGeneratedCategories()
+}, [])
 
   // ✅ GROUPING
   const grouped: any = {}
@@ -86,7 +91,9 @@ export default function BracketsPage({ params }: any) {
     if (!reg.approved) return
 
     const p = reg.players
-    if (!p?.category_key) return
+    const categoryKey = reg.category_key
+
+    if (!categoryKey) return
 
     const { gender, age_category: age, weight_category: weight } = p
 
@@ -94,7 +101,10 @@ export default function BracketsPage({ params }: any) {
     if (!grouped[gender][age]) grouped[gender][age] = {}
     if (!grouped[gender][age][weight]) grouped[gender][age][weight] = []
 
-    grouped[gender][age][weight].push(p)
+    grouped[gender][age][weight].push({
+      ...p,
+      category_key: categoryKey   // ✅ attach manually
+    })
   })
 
   const handleGenerate = async (players: any[]) => {
