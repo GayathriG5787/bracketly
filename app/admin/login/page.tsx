@@ -30,7 +30,19 @@ export default function AdminLogin() {
       return
     }
 
-    // 🧠 Step 2: Get logged-in user
+    // console.log("LOGIN DATA:", data)
+
+    // 🧠 Step 2: Wait for session to be ready (🔥 IMPORTANT FIX)
+    const { data: sessionData } = await supabase.auth.getSession()
+    // console.log("SESSION AFTER LOGIN:", sessionData)
+
+    if (!sessionData.session) {
+      setError("Session not ready. Try again.")
+      setLoading(false)
+      return
+    }
+
+    // 🧠 Step 3: Get logged-in user
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
     if (userError || !userData?.user) {
@@ -41,16 +53,20 @@ export default function AdminLogin() {
 
     const user = userData.user
 
-    // 🛑 Step 3: Check admin role
+    // ✅ ADD IT HERE 👇
+    // console.log("USER:", user)
+
+    // 🛑 Step 4: Check admin role
     if (user.user_metadata?.role !== "admin") {
       setError("Access denied. Not an admin.")
-      await supabase.auth.signOut() // logout non-admin
+      await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    // ✅ Step 4: Redirect to admin dashboard
-    router.push("/admin")
+    setLoading(false)
+
+    router.replace("/admin")
   }
 
   return (
