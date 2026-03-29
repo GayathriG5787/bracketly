@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase" // make sure this path is correct
+import { syncUser } from "@/lib/syncUser"
 
 export default function AdminLogin() {
 
@@ -56,8 +57,14 @@ export default function AdminLogin() {
     // ✅ ADD IT HERE 👇
     // console.log("USER:", user)
 
-    // 🛑 Step 4: Check admin role
-    if (user.user_metadata?.role !== "admin") {
+    // ✅ Step 2: Now check role
+    const { data: dbUser } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (!dbUser || dbUser.role !== "admin") {
       setError("Access denied. Not an admin.")
       await supabase.auth.signOut()
       setLoading(false)

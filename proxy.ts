@@ -27,19 +27,30 @@ export async function proxy(req: NextRequest) {
 
   const { pathname } = req.nextUrl
 
-  // Allow login
+  // ✅ Allow admin login page
   if (pathname === "/admin/login") return res
 
-  // Protect admin routes
+  // 🔒 Protect admin routes
   if (pathname.startsWith("/admin") && !session) {
     const loginUrl = new URL("/admin/login", req.url)
     loginUrl.searchParams.set("redirect", pathname)
     return NextResponse.redirect(loginUrl)
   }
 
+  // 🔒 Protect register page (PLAYER AUTH)
+  if (pathname.includes("/register") && !session) {
+    const homeUrl = new URL("/", req.url)
+    homeUrl.searchParams.set("login", "true") // optional UX
+    return NextResponse.redirect(homeUrl)
+  }
+
   return res
 }
 
+// ✅ IMPORTANT: update matcher
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/tournaments/:path*/register",
+  ],
 }
