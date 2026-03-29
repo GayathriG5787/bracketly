@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
 import { getCategory } from "@/utils/category" // ✅ NEW
+import { useRouter } from "next/navigation"
 
 export default function RegisterPlayer() {
 
@@ -36,6 +37,18 @@ const tournamentId = params.id
   const [year, setYear] = useState("")
 
   const [loading, setLoading] = useState(false)
+
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error("Logout error:", error)
+    } else {
+      router.replace("/") // go back to home
+    }
+}
 
   useEffect(() => {
 
@@ -248,9 +261,20 @@ const tournamentId = params.id
 
   return (
     <div className="p-8 max-w-md">
-      <h1 className="text-2xl font-bold mb-2">
-        Player Registration
-      </h1>
+      
+      {/* ✅ HEADER WITH LOGOUT */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">
+          Player Registration
+        </h1>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+        >
+          Logout
+        </button>
+      </div>
 
       {tournament && (
         <p className="mb-4 text-gray-600">

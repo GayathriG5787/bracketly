@@ -49,17 +49,6 @@ useEffect(() => {
     setLoading(false)
   }
 
-  // ✅ LOGOUT FUNCTION
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-      console.error("Logout error:", error)
-    } else {
-      router.replace("/") // redirect to home
-    }
-  }
-
   if (loading) {
     return <div className="p-8">Loading tournaments...</div>
   }
@@ -71,12 +60,6 @@ useEffect(() => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Tournaments</h1>
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
       </div>
 
       {tournaments.length === 0 ? (
