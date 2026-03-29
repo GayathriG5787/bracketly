@@ -30,24 +30,51 @@ export async function proxy(req: NextRequest) {
   // ✅ Allow admin login page
   if (pathname === "/admin/login") return res
 
-  // 🔒 Protect admin routes
+  // 🔒 Protect admin routes (AUTH)
   if (pathname.startsWith("/admin") && !session) {
     const loginUrl = new URL("/admin/login", req.url)
     loginUrl.searchParams.set("redirect", pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // 🔒 Protect register page (PLAYER AUTH)
+  // 🔒 Protect register page (AUTH)
   if (pathname.includes("/register") && !session) {
     const homeUrl = new URL("/", req.url)
-    homeUrl.searchParams.set("login", "true") // optional UX
+    homeUrl.searchParams.set("login", "true")
     return NextResponse.redirect(homeUrl)
+  }
+
+  // ================================
+  // 🆕 ROLE-BASED AUTHORIZATION
+  // ================================
+  if (session) {
+    const {
+      data: userData,
+    } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", session.user.id)
+      .single()
+
+    const role = userData?.role
+
+    // 🚫 Block ADMIN from player register page
+    if (pathname.includes("/register") && role !== "player") {
+      return NextResponse.redirect(new URL("/admin", req.url))
+    }
+
+    // 🚫 Block non-admins from admin routes
+    if (pathname.startsWith("/admin") && role !== "admin") {
+      const loginUrl = new URL("/admin/login", req.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   return res
 }
 
-// ✅ IMPORTANT: update matcher
+// ✅ matcher (unchanged)
 export const config = {
   matcher: [
     "/admin/:path*",
