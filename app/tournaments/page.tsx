@@ -52,39 +52,43 @@ export default function TournamentsPage() {
         <p>No tournaments available</p>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          
+        {tournaments.map((tournament) => (
+          <div
+            key={tournament.id}
+            className="border rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer"
+          >
+            <Link href={`/tournaments/${tournament.id}`}>
+              <div>
+                <h2 className="text-xl font-semibold mb-2">
+                  {tournament.name}
+                </h2>
 
-          {tournaments.map((tournament) => (
-            <div
-              key={tournament.id}
-              className="border rounded-lg p-4 shadow-sm"
-            >
-              <h2 className="text-xl font-semibold mb-2">
-                {tournament.name}
-              </h2>
-
-              <p className="text-gray-600 mb-1">
-                📍 {tournament.location}
-              </p>
-
-              <p className="text-gray-600 mb-1">
-                📅 {new Date(tournament.tournament_date).toDateString()}
-              </p>
-
-              {tournament.level && (
-                <p className="text-sm mb-3">
-                  🏆 {tournament.level} Level
+                <p className="text-gray-600 mb-1">
+                  📍 {tournament.location}
                 </p>
-              )}
 
-              <Link
-                href={`/register/${tournament.id}`}
-                className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Register
-              </Link>
+                <p className="text-gray-600 mb-1">
+                  📅 {new Date(tournament.tournament_date).toDateString()}
+                </p>
 
-            </div>
-          ))}
+                {tournament.level && (
+                  <p className="text-sm mb-3">
+                    🏆 {tournament.level} Level
+                  </p>
+                )}
+              </div>
+            </Link>
+
+            {/* Separate button */}
+            <Link
+              href={`/tournaments/${tournament.id}/register`}
+              className="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Register
+            </Link>
+          </div>
+        ))}
 
         </div>
       )}

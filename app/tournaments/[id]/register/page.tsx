@@ -7,8 +7,8 @@ import { getCategory } from "@/utils/category" // ✅ NEW
 
 export default function RegisterPlayer() {
 
-  const params = useParams()
-  const tournamentId = params.id as string
+const params = useParams<{ id: string }>()
+const tournamentId = params.id
 
   const [tournament, setTournament] = useState<any>(null)
 
