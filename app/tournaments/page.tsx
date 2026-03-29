@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 
 type Tournament = {
   id: string
@@ -16,6 +17,8 @@ export default function TournamentsPage() {
 
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
+
+  const router = useRouter()
 
   useEffect(() => {
     fetchTournaments()
@@ -37,6 +40,17 @@ export default function TournamentsPage() {
     setLoading(false)
   }
 
+  // ✅ LOGOUT FUNCTION
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error("Logout error:", error)
+    } else {
+      router.replace("/") // redirect to home
+    }
+  }
+
   if (loading) {
     return <div className="p-8">Loading tournaments...</div>
   }
@@ -44,9 +58,17 @@ export default function TournamentsPage() {
   return (
     <div className="p-8">
 
-      <h1 className="text-2xl font-bold mb-6">
-        Tournaments
-      </h1>
+      {/* ✅ UPDATED HEADER WITH LOGOUT */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Tournaments</h1>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+        >
+          Logout
+        </button>
+      </div>
 
       {tournaments.length === 0 ? (
         <p>No tournaments available</p>
@@ -80,7 +102,6 @@ export default function TournamentsPage() {
               </div>
             </Link>
 
-            {/* Separate button */}
             <Link
               href={`/tournaments/${tournament.id}/register`}
               className="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
