@@ -14,7 +14,7 @@ const tournamentId = params.id
   const [tournament, setTournament] = useState<any>(null)
 
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [userEmail, setUserEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [district, setDistrict] = useState("")
   const [age, setAge] = useState("")
@@ -49,6 +49,18 @@ const tournamentId = params.id
       router.replace("/") // go back to home
     }
 }
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user?.email) {
+        setUserEmail(user.email)
+      }
+    }
+
+    getUser()
+  }, [])
 
   useEffect(() => {
 
@@ -88,6 +100,16 @@ const tournamentId = params.id
     e.preventDefault()
     if (loading) return
     setLoading(true)
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+    if (userError || !user || !user.email) {
+      alert("User not logged in")
+      setLoading(false)
+      return
+    }
+
+    const email = user.email
 
     const { data: existingPlayer } = await supabase
       .from("players")
@@ -240,7 +262,6 @@ const tournamentId = params.id
 
     // RESET
     setName("")
-    setEmail("")
     setPhone("")
     setDistrict("")
     setAge("")
@@ -287,8 +308,11 @@ const tournamentId = params.id
         <input placeholder="Name" className="border p-2 w-full"
           value={name} onChange={(e) => setName(e.target.value)} />
 
-        <input placeholder="Email" className="border p-2 w-full"
-          value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input
+          value={userEmail}
+          disabled
+          className="border p-2 w-full bg-gray-100 cursor-not-allowed"
+        />
 
         <input placeholder="Phone" className="border p-2 w-full"
           value={phone} onChange={(e) => setPhone(e.target.value)} />
