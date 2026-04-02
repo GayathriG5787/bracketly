@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
 import { getCategory } from "@/utils/category" // ✅ NEW
 import { useRouter } from "next/navigation"
+import { beltOptions } from "@/utils/beltOptions"
 
 export default function RegisterPlayer() {
 
@@ -37,6 +38,28 @@ const tournamentId = params.id
   const [year, setYear] = useState("")
 
   const [loading, setLoading] = useState(false)
+
+  // ADDRESS
+  const [address1, setAddress1] = useState("")
+  const [address2, setAddress2] = useState("")
+  const [city, setCity] = useState("")
+  const [stateName, setStateName] = useState("")
+  const [pincode, setPincode] = useState("")
+
+  // FILES
+  const [birthCert, setBirthCert] = useState<File | null>(null)
+  const [aadhar, setAadhar] = useState<File | null>(null)
+  const [beltCert, setBeltCert] = useState<File | null>(null)
+  const [schoolProof, setSchoolProof] = useState<File | null>(null)
+  const [collegeProof, setCollegeProof] = useState<File | null>(null)
+
+  // DYNAMIC PARTICIPATIONS
+  const [participations, setParticipations] = useState([
+    { level: "", file: null as File | null }
+  ])
+
+  // ACHIEVEMENT FILES
+  const [achievementFiles, setAchievementFiles] = useState<File[]>([])
 
   const router = useRouter()
 
@@ -95,6 +118,26 @@ const tournamentId = params.id
     setYear("")
   }
 
+  const uploadFile = async (file: File, folder: string) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("upload_preset", "bracketly_upload")
+
+    // 🔥 IMPORTANT: folder structure
+    formData.append("folder", folder)
+
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/djtxsrxve/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    )
+
+    const data = await res.json()
+    return data.secure_url
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
 
     e.preventDefault()
@@ -141,6 +184,7 @@ const tournamentId = params.id
         .eq("id", playerId)
     } else {
 
+      // ✅ STEP 1: Create player WITHOUT file URLs
       const { data: newPlayer, error } = await supabase
         .from("players")
         .insert({
@@ -152,6 +196,12 @@ const tournamentId = params.id
           weight: Number(weight),
           gender,
           belt_rank: beltRank,
+
+          address_line1: address1,
+          address_line2: address2,
+          city,
+          state: stateName,
+          pincode,
 
           // ✅ CATEGORY FROM UTILS
           age_category,
@@ -165,13 +215,56 @@ const tournamentId = params.id
         .select()
         .single()
 
-      if (error) {
+      if (error || !newPlayer) {
+        console.error("Insert error:", error)
         alert("Error creating player")
         setLoading(false)
         return
       }
 
       playerId = newPlayer.id
+
+      // ✅ STEP 2: Upload files AFTER getting playerId
+      const baseFolder = `bracketly/tournaments/${tournamentId}/players/${playerId}/documents`
+
+      const birthUrl = birthCert
+        ? await uploadFile(birthCert, `${baseFolder}/birth_certificate`)
+        : null
+
+      const aadharUrl = aadhar
+        ? await uploadFile(aadhar, `${baseFolder}/aadhar`)
+        : null
+
+      const beltUrl = beltCert
+        ? await uploadFile(beltCert, `${baseFolder}/belt`)
+        : null
+
+      const schoolUrl = schoolProof
+        ? await uploadFile(schoolProof, `${baseFolder}/school`)
+        : null
+
+      const collegeUrl = collegeProof
+        ? await uploadFile(collegeProof, `${baseFolder}/college`)
+        : null
+
+      // ✅ STEP 3: Update player with ALL file URLs
+      const { error: updateError } = await supabase
+        .from("players")
+        .update({
+          birth_certificate_url: birthUrl,
+          aadhar_card_url: aadharUrl,
+          belt_certificate_url: beltUrl,
+          school_bonafide_url: schoolUrl,
+          college_proof_url: collegeUrl
+        })
+        .eq("id", playerId)
+
+      if (updateError) {
+        console.error("Update error:", updateError)
+        alert("File upload failed")
+        setLoading(false)
+        return
+      }
     }
 
     const { data: existingRegistration } = await supabase
@@ -203,53 +296,44 @@ const tournamentId = params.id
         year: a.year
       }))
 
-      await supabase.from("player_achievements").insert(rows)
+      const achievementRows = await Promise.all(
+        achievements.map(async (a, i) => ({
+          player_id: playerId,
+          level: a.level,
+          medal_type: a.medal_type,
+          year: a.year,
+          certificate_url: achievementFiles[i]
+            ? await uploadFile(
+                achievementFiles[i],
+                `bracketly/tournaments/${tournamentId}/players/${playerId}/achievements`
+              )
+            : null
+        }))
+)
+
+await supabase.from("player_achievements").insert(achievementRows)
     }
 
-    const participationRows: any[] = []
-    const currentYear = new Date().getFullYear()
+    // NEW PARTICIPATION LOGIC (WITH CERTIFICATES)
 
-    const levels = [
-      { count: districtParticipations, level: "district" },
-      { count: stateParticipations, level: "state" },
-      { count: nationalParticipations, level: "national" }
-    ]
+    const participationRowsNew = await Promise.all(
+      participations.map(async (p) => ({
+        player_id: playerId,
+        level: p.level,
+        year: new Date().getFullYear(),
+        certificate_url: p.file
+          ? await uploadFile(
+              p.file,
+              `bracketly/tournaments/${tournamentId}/players/${playerId}/participations`
+            )
+          : null
+      }))
+    )
 
-    // 🔍 DEBUG: raw input values
-    // console.log("Raw Inputs:", {
-    //   districtParticipations,
-    //   stateParticipations,
-    //   nationalParticipations
-    // })
-
-    levels.forEach(({ count, level }) => {
-      const parsedCount = parseInt(count) || 0
-
-      // 🔍 DEBUG: parsed values
-      // console.log(`Parsed count for ${level}:`, parsedCount)
-
-      for (let i = 0; i < parsedCount; i++) {
-        participationRows.push({
-          player_id: playerId,
-          level,
-          year: currentYear
-        })
-      }
-    })
-
-    // 🔍 DEBUG: final rows
-    // console.log("FINAL participationRows:", participationRows)
-
-    if (participationRows.length > 0) {
-      const { data, error } = await supabase
+    if (participationRowsNew.length > 0) {
+      const { error } = await supabase
         .from("player_participations")
-        .insert(participationRows)
-        .select()
-
-      // 🔍 DEBUG: DB response
-      // console.log("Insert Data:", data)
-      // console.log("Insert Error (raw):", error)
-      // console.log("Insert Error (stringified):", JSON.stringify(error, null, 2))
+        .insert(participationRowsNew)
 
       if (error) {
         alert("Participation insert failed")
@@ -281,7 +365,7 @@ const tournamentId = params.id
   }
 
   return (
-    <div className="p-8 max-w-md">
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
       
       {/* ✅ HEADER WITH LOGOUT */}
       <div className="flex justify-between items-center mb-4">
@@ -305,40 +389,221 @@ const tournamentId = params.id
 
       <form onSubmit={handleSubmit} className="space-y-4">
 
-        <input placeholder="Name" className="border p-2 w-full"
-          value={name} onChange={(e) => setName(e.target.value)} />
+      <div>
+        <label className="block text-sm font-medium mb-1">Full Name</label>
+        <input
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
 
+      <div>
+        <label className="block text-sm font-medium mb-1">Email</label>
         <input
           value={userEmail}
           disabled
-          className="border p-2 w-full bg-gray-100 cursor-not-allowed"
+          className="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed"
         />
+      </div>
 
-        <input placeholder="Phone" className="border p-2 w-full"
-          value={phone} onChange={(e) => setPhone(e.target.value)} />
-
+      <div>
+        <label className="block text-sm font-medium mb-1">Phone</label>
         <input
-          placeholder="District"
-          className="border p-2 w-full"
-          value={district}
-          onChange={(e) => setDistrict(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
         />
+      </div>
 
-        <input type="number" placeholder="Age" className="border p-2 w-full"
-          value={age} onChange={(e) => setAge(e.target.value)} />
+      {/* Age */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Age</label>
+        <input
+          type="number"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={age}
+          onChange={(e) => setAge(e.target.value)}
+        />
+      </div>
 
-        <input type="number" placeholder="Weight" className="border p-2 w-full"
-          value={weight} onChange={(e) => setWeight(e.target.value)} />
+      {/* Weight */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Weight (kg)</label>
+        <input
+          type="number"
+          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+        />
+      </div>
 
-        <select className="border p-2 w-full"
-          value={gender} onChange={(e) => setGender(e.target.value)}>
-          <option value="">Gender</option>
-          <option>Male</option>
-          <option>Female</option>
-        </select>
+        <div>
+          <label className="block text-sm font-medium mb-1">Gender</label>
+          <select
+            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+          >
+            <option value="">Select Gender</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
 
-        <input placeholder="Belt Rank" className="border p-2 w-full"
-          value={beltRank} onChange={(e) => setBeltRank(e.target.value)} />
+        {/* Belt */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Belt</label>
+          <select
+            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            value={beltRank}
+            onChange={(e) => setBeltRank(e.target.value)}
+          >
+            <option value="">Select Belt</option>
+            {beltOptions.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bg-white shadow rounded-xl p-4 space-y-4">
+          <h2 className="text-lg font-semibold border-b pb-2">Address</h2>
+
+          {/* Address Line 1 */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Address Line 1</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2"
+              value={address1}
+              onChange={(e) => setAddress1(e.target.value)}
+            />
+          </div>
+
+          {/* Address Line 2 */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Address Line 2</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2"
+              value={address2}
+              onChange={(e) => setAddress2(e.target.value)}
+            />
+          </div>
+
+          {/* City */}
+          <div>
+            <label className="block text-sm font-medium mb-1">City</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+          </div>
+
+          {/* District (reuse existing state) */}
+          <div>
+            <label className="block text-sm font-medium mb-1">District</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+            />
+          </div>
+
+          {/* State */}
+          <div>
+            <label className="block text-sm font-medium mb-1">State</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2"
+              value={stateName}
+              onChange={(e) => setStateName(e.target.value)}
+            />
+          </div>
+
+          {/* Pincode */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Pincode</label>
+            <input
+              className="w-full border rounded-lg px-3 py-2"
+              value={pincode}
+              onChange={(e) => setPincode(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <h2 className="font-semibold">Documents</h2>
+
+        {/* Birth Certificate */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Birth Certificate</label>
+
+          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+              Upload File
+            </span>
+
+            <span className="text-sm text-gray-600">
+              {birthCert ? birthCert.name : "No file selected"}
+            </span>
+
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => setBirthCert(e.target.files?.[0] || null)}
+            />
+          </label>
+        </div>
+
+        {/* Aadhar */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Aadhar Card</label>
+
+          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+              Upload File
+            </span>
+
+            <span className="text-sm text-gray-600">
+              {aadhar ? aadhar.name : "No file selected"}
+            </span>
+
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => setAadhar(e.target.files?.[0] || null)}
+            />
+          </label>
+        </div>
+
+        {/* Belt Certificate */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Belt Certificate</label>
+
+          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+              Upload File
+            </span>
+
+            <span className="text-sm text-gray-600">
+              {beltCert ? beltCert.name : "No file selected"}
+            </span>
+
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => setBeltCert(e.target.files?.[0] || null)}
+            />
+          </label>
+        </div>
+
+        {studentType === "school" && (
+          <input type="file" onChange={(e) => setSchoolProof(e.target.files?.[0] || null)} />
+        )}
+
+        {studentType === "college" && (
+          <input type="file" onChange={(e) => setCollegeProof(e.target.files?.[0] || null)} />
+        )}
 
         {/* STUDENT */}
         <select className="border p-2 w-full"
@@ -410,15 +675,19 @@ const tournamentId = params.id
           Add Achievement
         </button>
 
-        {achievements.map((a, i) => (
-          <div key={i} className="text-sm">
-            {a.level} {a.medal_type} ({a.year})
-          </div>
-        ))}
+        <div className="space-y-2">
+          {achievements.map((a, i) => (
+            <div key={i} className="bg-gray-100 px-3 py-2 rounded">
+              {a.level} • {a.medal_type} • {a.year}
+            </div>
+          ))}
+        </div>
 
-        <button type="submit"
+        <button
+          type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded">
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+        >
           {loading ? "Registering..." : "Register"}
         </button>
 

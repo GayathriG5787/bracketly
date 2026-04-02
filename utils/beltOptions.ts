@@ -1,0 +1,22 @@
+export const beltOptions = [
+  { value: "10th_kup", label: "10th Kup (White)", order: 1 },
+  { value: "9th_kup", label: "9th Kup (White-Yellow)", order: 2 },
+  { value: "8th_kup", label: "8th Kup (Yellow)", order: 3 },
+  { value: "7th_kup", label: "7th Kup (Yellow-Green)", order: 4 },
+  { value: "6th_kup", label: "6th Kup (Green)", order: 5 },
+  { value: "5th_kup", label: "5th Kup (Green-Blue)", order: 6 },
+  { value: "4th_kup", label: "4th Kup (Blue)", order: 7 },
+  { value: "3rd_kup", label: "3rd Kup (Blue-Red)", order: 8 },
+  { value: "2nd_kup", label: "2nd Kup (Red)", order: 9 },
+  { value: "1st_kup", label: "1st Kup (Red-Black)", order: 10 },
+
+  { value: "1st_dan", label: "1st Dan (Black)", order: 11 },
+  { value: "2nd_dan", label: "2nd Dan (Black)", order: 12 },
+  { value: "3rd_dan", label: "3rd Dan (Black)", order: 13 },
+  { value: "4th_dan", label: "4th Dan (Black)", order: 14 },
+  { value: "5th_dan", label: "5th Dan (Black)", order: 15 },
+  { value: "6th_dan", label: "6th Dan (Black)", order: 16 },
+  { value: "7th_dan", label: "7th Dan (Black)", order: 17 },
+  { value: "8th_dan", label: "8th Dan (Black)", order: 18 },
+  { value: "9th_dan", label: "9th Dan (Black)", order: 19 },
+];
