@@ -676,22 +676,6 @@ await supabase.from("player_achievements").insert(achievementRows)
           </label>
         </div>
 
-        {studentType === "school" && (
-          <input
-            type="file"
-            required
-            onChange={(e) => setSchoolProof(e.target.files?.[0] || null)}
-          />
-        )}
-
-        {studentType === "college" && (
-          <input
-            type="file"
-            required
-            onChange={(e) => setCollegeProof(e.target.files?.[0] || null)}
-          />
-        )}
-
         {/* STUDENT */}
         <select className="border p-2 w-full"
           value={studentType}
@@ -712,26 +696,188 @@ await supabase.from("player_achievements").insert(achievementRows)
             value={collegeName} onChange={(e) => setCollegeName(e.target.value)} />
         )}
 
+                {studentType === "school" && (
+          <div>
+            <label className="block text-sm font-medium mb-1">School Bonafide</label>
+            <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+              <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                Upload File
+              </span>
+              <span className="text-sm text-gray-600">
+                {schoolProof ? schoolProof.name : "No file selected"}
+              </span>
+              <input
+                type="file"
+                required
+                className="hidden"
+                onChange={(e) => setSchoolProof(e.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+        )}
+
+        {studentType === "college" && (
+          <div>
+            <label className="block text-sm font-medium mb-1">College Proof</label>
+            <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+              <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                Upload File
+              </span>
+              <span className="text-sm text-gray-600">
+                {collegeProof ? collegeProof.name : "No file selected"}
+              </span>
+              <input
+                type="file"
+                required
+                className="hidden"
+                onChange={(e) => setCollegeProof(e.target.files?.[0] || null)}
+              />
+            </label>
+          </div>
+        )}
+
         <input placeholder="Academy (optional)" className="border p-2 w-full"
           value={academy} onChange={(e) => setAcademy(e.target.value)} />
 
         {/* PARTICIPATIONS */}
         <h2 className="font-semibold">Participations</h2>
 
-        <input type="number" placeholder="District"
+        <input
+          type="number"
+          placeholder="District"
           className="border p-2 w-full"
           value={districtParticipations}
-          onChange={(e) => setDistrictParticipations(e.target.value)} />
+          onChange={(e) => setDistrictParticipations(e.target.value)}
+        />
 
-        <input type="number" placeholder="State"
+        {[...Array(Number(districtParticipations || 0))].map((_, i) => (
+          <div key={`district-${i}`}>
+            <label className="block text-sm font-medium mb-1">
+              District Certificate {i + 1}
+            </label>
+
+            <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+              <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                Upload File
+              </span>
+
+              <span className="text-sm text-gray-600">
+                {participations[i]?.file
+                  ? participations[i].file.name
+                  : "No file selected"}
+              </span>
+
+              <input
+                type="file"
+                required
+                className="hidden"
+                onChange={(e) => {
+                  const updated = [...participations]
+                  updated[i] = {
+                    level: "district",
+                    file: e.target.files?.[0] || null,
+                  }
+                  setParticipations(updated)
+                }}
+              />
+            </label>
+          </div>
+        ))}
+
+        <input
+          type="number"
+          placeholder="State"
           className="border p-2 w-full"
           value={stateParticipations}
-          onChange={(e) => setStateParticipations(e.target.value)} />
+          onChange={(e) => setStateParticipations(e.target.value)}
+        />
 
-        <input type="number" placeholder="National"
+        {[...Array(Number(stateParticipations || 0))].map((_, i) => {
+          const index = Number(districtParticipations) + i
+
+          return (
+            <div key={`state-${i}`}>
+              <label className="block text-sm font-medium mb-1">
+                State Certificate {i + 1}
+              </label>
+
+              <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+                <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                  Upload File
+                </span>
+
+                <span className="text-sm text-gray-600">
+                  {participations[index]?.file
+                    ? participations[index].file.name
+                    : "No file selected"}
+                </span>
+
+                <input
+                  type="file"
+                  required
+                  className="hidden"
+                  onChange={(e) => {
+                    const updated = [...participations]
+                    updated[index] = {
+                      level: "state",
+                      file: e.target.files?.[0] || null,
+                    }
+                    setParticipations(updated)
+                  }}
+                />
+              </label>
+            </div>
+          )
+        })}
+
+        <input
+          type="number"
+          placeholder="National"
           className="border p-2 w-full"
           value={nationalParticipations}
-          onChange={(e) => setNationalParticipations(e.target.value)} />
+          onChange={(e) => setNationalParticipations(e.target.value)}
+        />
+
+        {[...Array(Number(nationalParticipations || 0))].map((_, i) => {
+          const index =
+            Number(districtParticipations) +
+            Number(stateParticipations) +
+            i
+
+          return (
+            <div key={`national-${i}`}>
+              <label className="block text-sm font-medium mb-1">
+                National Certificate {i + 1}
+              </label>
+
+              <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+                <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                  Upload File
+                </span>
+
+                <span className="text-sm text-gray-600">
+                  {participations[index]?.file
+                    ? participations[index].file.name
+                    : "No file selected"}
+                </span>
+
+                <input
+                  type="file"
+                  required
+                  className="hidden"
+                  onChange={(e) => {
+                    const updated = [...participations]
+                    updated[index] = {
+                      level: "national",
+                      file: e.target.files?.[0] || null,
+                    }
+                    setParticipations(updated)
+                  }}
+                />
+              </label>
+            </div>
+          )
+        })}
 
         {/* ACHIEVEMENTS */}
         <h2 className="font-semibold">Achievements</h2>
