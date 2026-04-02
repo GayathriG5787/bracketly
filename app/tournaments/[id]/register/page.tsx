@@ -138,11 +138,66 @@ const tournamentId = params.id
     return data.secure_url
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
 
-    e.preventDefault()
-    if (loading) return
-    setLoading(true)
+      e.preventDefault()
+      if (loading) return
+      setLoading(true)
+
+      // ✅ BASIC REQUIRED VALIDATION
+      if (
+        !name || !phone || !age || !weight || !gender || !beltRank ||
+        !address1 || !city || !stateName || !pincode ||
+        !birthCert || !aadhar || !beltCert
+      ) {
+        alert("Please fill all required fields and upload all documents")
+        setLoading(false)
+        return
+      }
+
+      // ✅ STUDENT VALIDATION
+      if (studentType === "school" && !schoolProof) {
+        alert("Please upload school bonafide")
+        setLoading(false)
+        return
+      }
+
+      if (studentType === "college" && !collegeProof) {
+        alert("Please upload college proof")
+        setLoading(false)
+        return
+      }
+
+      // ✅ PARTICIPATION VALIDATION
+      const totalParticipations =
+        Number(districtParticipations) +
+        Number(stateParticipations) +
+        Number(nationalParticipations)
+
+      if (totalParticipations > 0) {
+        if (participations.length !== totalParticipations) {
+          alert("Upload certificates for all participations")
+          setLoading(false)
+          return
+        }
+
+        for (let p of participations) {
+          if (!p.file) {
+            alert("All participation certificates are required")
+            setLoading(false)
+            return
+          }
+        }
+      }
+
+      // ✅ ACHIEVEMENT VALIDATION
+      if (achievements.length > 0) {
+        if (achievementFiles.length !== achievements.length) {
+          alert("Upload certificate for each achievement")
+          setLoading(false)
+          return
+        }
+      }
 
     const { data: { user }, error: userError } = await supabase.auth.getUser()
 
@@ -570,6 +625,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
             <input
               type="file"
+              required
               className="hidden"
               onChange={(e) => setBirthCert(e.target.files?.[0] || null)}
             />
@@ -591,6 +647,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
             <input
               type="file"
+              required
               className="hidden"
               onChange={(e) => setAadhar(e.target.files?.[0] || null)}
             />
@@ -612,6 +669,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
             <input
               type="file"
+              required
               className="hidden"
               onChange={(e) => setBeltCert(e.target.files?.[0] || null)}
             />
@@ -619,11 +677,19 @@ await supabase.from("player_achievements").insert(achievementRows)
         </div>
 
         {studentType === "school" && (
-          <input type="file" onChange={(e) => setSchoolProof(e.target.files?.[0] || null)} />
+          <input
+            type="file"
+            required
+            onChange={(e) => setSchoolProof(e.target.files?.[0] || null)}
+          />
         )}
 
         {studentType === "college" && (
-          <input type="file" onChange={(e) => setCollegeProof(e.target.files?.[0] || null)} />
+          <input
+            type="file"
+            required
+            onChange={(e) => setCollegeProof(e.target.files?.[0] || null)}
+          />
         )}
 
         {/* STUDENT */}
