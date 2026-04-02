@@ -352,14 +352,35 @@ await supabase.from("player_achievements").insert(achievementRows)
     setWeight("")
     setGender("")
     setBeltRank("")
+
     setStudentType("")
     setSchoolName("")
     setCollegeName("")
     setAcademy("")
+
     setDistrictParticipations("")
     setStateParticipations("")
     setNationalParticipations("")
+
     setAchievements([])
+
+    // ✅ ADDRESS RESET
+    setAddress1("")
+    setAddress2("")
+    setCity("")
+    setStateName("")
+    setPincode("")
+
+    // ✅ FILE RESET
+    setBirthCert(null)
+    setAadhar(null)
+    setBeltCert(null)
+    setSchoolProof(null)
+    setCollegeProof(null)
+
+    // OPTIONAL (good practice)
+    setParticipations([{ level: "", file: null }])
+    setAchievementFiles([])
 
     setLoading(false)
   }
