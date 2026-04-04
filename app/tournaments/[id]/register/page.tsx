@@ -745,7 +745,10 @@ await supabase.from("player_achievements").insert(achievementRows)
           placeholder="District"
           className="border p-2 w-full"
           value={districtParticipations}
-          onChange={(e) => setDistrictParticipations(e.target.value)}
+          onChange={(e) => {
+            const value = Math.max(0, Number(e.target.value))
+            setDistrictParticipations(String(value))
+          }}
         />
 
         {[...Array(Number(districtParticipations || 0))].map((_, i) => (
@@ -788,7 +791,10 @@ await supabase.from("player_achievements").insert(achievementRows)
           placeholder="State"
           className="border p-2 w-full"
           value={stateParticipations}
-          onChange={(e) => setStateParticipations(e.target.value)}
+          onChange={(e) => {
+            const value = Math.max(0, Number(e.target.value))
+            setStateParticipations(String(value))
+          }}
         />
 
         {[...Array(Number(stateParticipations || 0))].map((_, i) => {
@@ -835,7 +841,10 @@ await supabase.from("player_achievements").insert(achievementRows)
           placeholder="National"
           className="border p-2 w-full"
           value={nationalParticipations}
-          onChange={(e) => setNationalParticipations(e.target.value)}
+          onChange={(e) => {
+            const value = Math.max(0, Number(e.target.value))
+            setNationalParticipations(String(value))
+          }}
         />
 
         {[...Array(Number(nationalParticipations || 0))].map((_, i) => {
