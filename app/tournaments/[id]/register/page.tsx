@@ -59,7 +59,7 @@ const tournamentId = params.id
   ])
 
   // ACHIEVEMENT FILES
-  const [achievementFiles, setAchievementFiles] = useState<File[]>([])
+  const [achievementFile, setAchievementFile] = useState<File | null>(null)
 
   const router = useRouter()
 
@@ -103,10 +103,10 @@ const tournamentId = params.id
 
   const addAchievement = () => {
 
-    if (!level || !medalType || !year) {
-      alert("Fill achievement fields")
-      return
-    }
+  if (!level || !medalType || !year || !achievementFile) {
+    alert("Fill all achievement fields + upload certificate")
+    return
+  }
 
     setAchievements([
       ...achievements,
@@ -187,15 +187,6 @@ const tournamentId = params.id
             setLoading(false)
             return
           }
-        }
-      }
-
-      // ✅ ACHIEVEMENT VALIDATION
-      if (achievements.length > 0) {
-        if (achievementFiles.length !== achievements.length) {
-          alert("Upload certificate for each achievement")
-          setLoading(false)
-          return
         }
       }
 
@@ -351,20 +342,20 @@ const tournamentId = params.id
         year: a.year
       }))
 
-      const achievementRows = await Promise.all(
-        achievements.map(async (a, i) => ({
-          player_id: playerId,
-          level: a.level,
-          medal_type: a.medal_type,
-          year: a.year,
-          certificate_url: achievementFiles[i]
-            ? await uploadFile(
-                achievementFiles[i],
-                `bracketly/tournaments/${tournamentId}/players/${playerId}/achievements`
-              )
-            : null
-        }))
-)
+    const achievementRows = await Promise.all(
+      achievements.map(async (a) => ({
+        player_id: playerId,
+        level: a.level,
+        medal_type: a.medal_type,
+        year: a.year,
+        certificate_url: a.file
+          ? await uploadFile(
+              a.file,
+              `bracketly/tournaments/${tournamentId}/players/${playerId}/achievements`
+            )
+          : null
+      }))
+    )
 
 await supabase.from("player_achievements").insert(achievementRows)
     }
@@ -435,7 +426,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
     // OPTIONAL (good practice)
     setParticipations([{ level: "", file: null }])
-    setAchievementFiles([])
+    setAchievementFile(null)
 
     setLoading(false)
   }
@@ -744,6 +735,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
         <input
           type="number"
+          min={0}
           placeholder="District"
           className="border p-2 w-full"
           value={districtParticipations}
@@ -786,6 +778,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
         <input
           type="number"
+          min={0}
           placeholder="State"
           className="border p-2 w-full"
           value={stateParticipations}
@@ -832,6 +825,7 @@ await supabase.from("player_achievements").insert(achievementRows)
 
         <input
           type="number"
+          min={0}
           placeholder="National"
           className="border p-2 w-full"
           value={nationalParticipations}
@@ -902,6 +896,28 @@ await supabase.from("player_achievements").insert(achievementRows)
           className="border p-2 w-full"
           value={year} onChange={(e) => setYear(e.target.value)} />
 
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Achievement Certificate
+          </label>
+
+          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
+            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+              Upload File
+            </span>
+          
+            <span className="text-sm text-gray-600">
+              {achievementFile ? achievementFile.name : "No file selected"}
+            </span>
+
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => setAchievementFile(e.target.files?.[0] || null)}
+            />
+          </label>
+      </div>
+
         <button type="button"
           onClick={addAchievement}
           className="bg-gray-500 text-white px-3 py-1 rounded">
@@ -912,6 +928,10 @@ await supabase.from("player_achievements").insert(achievementRows)
           {achievements.map((a, i) => (
             <div key={i} className="bg-gray-100 px-3 py-2 rounded">
               {a.level} • {a.medal_type} • {a.year}
+              <br />
+              <span className="text-xs text-gray-500">
+                {a.file?.name}
+              </span>
             </div>
           ))}
         </div>
