@@ -101,22 +101,28 @@ const tournamentId = params.id
 
   }, [tournamentId])
 
-  const addAchievement = () => {
+    const addAchievement = () => {
+      if (!level || !medalType || !year || !achievementFile) {
+        alert("Fill all achievement fields + upload certificate")
+        return
+      }
 
-  if (!level || !medalType || !year || !achievementFile) {
-    alert("Fill all achievement fields + upload certificate")
-    return
-  }
+      setAchievements([
+        ...achievements,
+        {
+          level,
+          medal_type: medalType,
+          year: Number(year),
+          file: achievementFile // ✅ FIX: store file
+        }
+      ])
 
-    setAchievements([
-      ...achievements,
-      { level, medal_type: medalType, year: Number(year) }
-    ])
-
-    setLevel("")
-    setMedalType("")
-    setYear("")
-  }
+      // reset fields
+      setLevel("")
+      setMedalType("")
+      setYear("")
+      setAchievementFile(null) // ✅ important
+    }
 
   const uploadFile = async (file: File, folder: string) => {
     const formData = new FormData()
