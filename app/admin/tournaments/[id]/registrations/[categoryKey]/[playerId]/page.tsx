@@ -8,6 +8,7 @@ export default function PlayerDetailPage() {
   const { id, categoryKey, playerId } = useParams()
 
   const [data, setData] = useState<any>(null)
+  const [approving, setApproving] = useState(false)
 
   const fetchPlayer = async () => {
     const { data, error } = await supabase
@@ -68,6 +69,27 @@ export default function PlayerDetailPage() {
   useEffect(() => {
     fetchPlayer()
   }, [])
+
+    const approvePlayer = async () => {
+    if (data.approved) return
+
+    setApproving(true)
+
+    const { error } = await supabase
+        .from("registrations")
+        .update({ approved: true })
+        .eq("id", data.id)
+
+    if (error) {
+        alert("Approval failed")
+        setApproving(false)
+        return
+    }
+
+    // update UI instantly
+    setData({ ...data, approved: true })
+    setApproving(false)
+    }
 
   if (!data) return <p className="p-6">Loading...</p>
 
@@ -188,14 +210,27 @@ export default function PlayerDetailPage() {
         ))}
       </div>
 
-      {/* APPROVAL STATUS */}
-      <div>
-        {data.approved ? (
-          <span className="text-green-600 font-semibold">Approved</span>
-        ) : (
-          <span className="text-yellow-600 font-semibold">Not Approved</span>
-        )}
-      </div>
+
+      <div className="mt-4">
+
+    {!data.approved ? (
+        <button
+        onClick={approvePlayer}
+        disabled={approving}
+        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+        {approving ? "Approving..." : "Approve Player"}
+        </button>
+    ) : (
+        <button
+        disabled
+        className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+        >
+        Approved
+        </button>
+    )}
+
+    </div>
 
     </div>
   )
