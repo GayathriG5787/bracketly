@@ -1,12 +1,14 @@
 "use client"
 
 import { use, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { getCategory } from "@/utils/category"
 
 export default function RegistrationsPage({ params }: any) {
 
   const { id: tournamentId } = use(params) as { id: string }
+  const router = useRouter()
 
   const [registrations, setRegistrations] = useState<any[]>([])
   const [openCategory, setOpenCategory] = useState<string | null>(null)
@@ -178,96 +180,26 @@ export default function RegistrationsPage({ params }: any) {
                       return (
                         <div key={weightKey}>
 
-                          <div
-                            onClick={() => setOpenWeight(openWeight === weightKey ? null : weightKey)}
-                            className="cursor-pointer bg-gray-100 p-2 rounded flex justify-between"
-                          >
+                          <div className="flex justify-between items-center bg-gray-100 p-2 rounded">
                             <span>{weight} ({players.length})</span>
-                            <span>{openWeight === weightKey ? "▲" : "▼"}</span>
+
+                            {players.length > 0 && (
+                              <button
+                                onClick={() => {
+                                  const categoryKey = players[0]?.category_key
+
+                                  if (!categoryKey) return
+
+                                  router.push(
+                                    `/admin/tournaments/${tournamentId}/registrations/${categoryKey}`
+                                  )
+                                }}
+                                className="bg-blue-600 text-white px-3 py-1 rounded"
+                              >
+                                View Players
+                              </button>
+                            )}
                           </div>
-
-                          {openWeight === weightKey && players.length > 0 && (
-                            <div className="ml-4 mt-2 space-y-2">
-
-                              {players.map((reg: any) => {
-
-                                const participations = reg.players.player_participations || []
-
-                                const districtCount = participations.filter((p:any) => p.level === "district").length
-                                const stateCount = participations.filter((p:any) => p.level === "state").length
-                                const nationalCount = participations.filter((p:any) => p.level === "national").length
-
-                                return (
-                                  <div key={reg.id} className="border p-4 rounded">
-
-                                    {/* ✅ YOUR ORIGINAL UI (UNCHANGED) */}
-                                    <h3 className="font-semibold mb-2">Player Details</h3>
-
-                                    <p><strong>Name:</strong> {reg.players.name}</p>
-                                    <p><strong>Email:</strong> {reg.players.email}</p>
-                                    <p><strong>Phone:</strong> {reg.players.phone}</p>
-                                    <p><strong>District:</strong> {reg.players.district}</p>
-
-                                    <p><strong>Age:</strong> {reg.players.age}</p>
-                                    <p><strong>Weight:</strong> {reg.players.weight}</p>
-                                    <p><strong>Gender:</strong> {reg.players.gender}</p>
-                                    <p><strong>Belt Rank:</strong> {reg.players.belt_rank}</p>
-
-                                    <h4 className="font-semibold mt-3">Background</h4>
-
-                                    <p><strong>Student Type:</strong> {reg.players.student_type || "N/A"}</p>
-
-                                    {reg.players.school_name && (
-                                      <p><strong>School:</strong> {reg.players.school_name}</p>
-                                    )}
-
-                                    {reg.players.college_name && (
-                                      <p><strong>College:</strong> {reg.players.college_name}</p>
-                                    )}
-
-                                    {reg.players.academy && (
-                                      <p><strong>Academy:</strong> {reg.players.academy}</p>
-                                    )}
-
-                                    <h4 className="font-semibold mt-3">Participations</h4>
-
-                                    <p>District: {districtCount}</p>
-                                    <p>State: {stateCount}</p>
-                                    <p>National: {nationalCount}</p>
-
-                                    <h4 className="font-semibold mt-3">Achievements</h4>
-
-                                    {reg.players.player_achievements.length === 0 && (
-                                      <p>No achievements</p>
-                                    )}
-
-                                    {reg.players.player_achievements.map((ach:any, index:number) => (
-                                      <p key={index}>
-                                        {ach.level} {ach.medal_type} ({ach.year})
-                                      </p>
-                                    ))}
-
-                                    {!reg.approved && (
-                                      <button
-                                        onClick={() => approvePlayer(reg.id, reg.players)}
-                                        className="bg-green-600 text-white px-3 py-1 rounded mt-3"
-                                      >
-                                        Approve
-                                      </button>
-                                    )}
-
-                                    {reg.approved && (
-                                      <span className="text-green-600 font-semibold block mt-2">
-                                        Approved
-                                      </span>
-                                    )}
-
-                                  </div>
-                                )
-                              })}
-
-                            </div>
-                          )}
 
                         </div>
                       )
