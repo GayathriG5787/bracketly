@@ -10,7 +10,7 @@ export default function HomePage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "${window.location.origin}/player/dashboard",
+        redirectTo: `${window.location.origin}/player/dashboard`,
       },
     })
 
