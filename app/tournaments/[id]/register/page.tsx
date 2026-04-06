@@ -206,13 +206,28 @@ const tournamentId = params.id
 
     const email = user.email
 
-    const { data: existingPlayer } = await supabase
+    let { data: playerData } = await supabase
       .from("players")
       .select("*")
-      .eq("email", email)
-      .maybeSingle()
+      .eq("user_id", user.id)
+      .single()
 
-    let playerId
+    // ✅ Auto-create player
+    if (!playerData) {
+      const { data: newPlayer } = await supabase
+        .from("players")
+        .insert({
+          user_id: user.id,
+          name,
+          email: user.email,
+        })
+        .select()
+        .single()
+
+      playerData = newPlayer
+    }
+
+    const playerId = playerData.id
 
     // ✅ USE CENTRALIZED CATEGORY LOGIC
     const { age_category, weight_category, category_key } = getCategory({
@@ -220,104 +235,6 @@ const tournamentId = params.id
       weight: Number(weight),
       gender
     })
-
-    if (existingPlayer) {
-
-      playerId = existingPlayer.id
-
-      await supabase
-        .from("players")
-        .update({
-          age: Number(age),
-          weight: Number(weight),
-          age_category,
-          weight_category
-        })
-        .eq("id", playerId)
-    } else {
-
-      // ✅ STEP 1: Create player WITHOUT file URLs
-      const { data: newPlayer, error } = await supabase
-        .from("players")
-        .insert({
-          name,
-          email,
-          phone,
-          district: district,
-          age: Number(age),
-          weight: Number(weight),
-          gender,
-          belt_rank: beltRank,
-
-          address_line1: address1,
-          address_line2: address2,
-          city,
-          state: stateName,
-          pincode,
-
-          // ✅ CATEGORY FROM UTILS
-          age_category,
-          weight_category,
-
-          student_type: studentType,
-          school_name: studentType === "school" ? schoolName : null,
-          college_name: studentType === "college" ? collegeName : null,
-          academy: academy || null
-        })
-        .select()
-        .single()
-
-      if (error || !newPlayer) {
-        console.error("Insert error:", error)
-        alert("Error creating player")
-        setLoading(false)
-        return
-      }
-
-      playerId = newPlayer.id
-
-      // ✅ STEP 2: Upload files AFTER getting playerId
-      const baseFolder = `bracketly/tournaments/${tournamentId}/players/${playerId}/documents`
-
-      const birthUrl = birthCert
-        ? await uploadFile(birthCert, `${baseFolder}/birth_certificate`)
-        : null
-
-      const aadharUrl = aadhar
-        ? await uploadFile(aadhar, `${baseFolder}/aadhar`)
-        : null
-
-      const beltUrl = beltCert
-        ? await uploadFile(beltCert, `${baseFolder}/belt`)
-        : null
-
-      const schoolUrl = schoolProof
-        ? await uploadFile(schoolProof, `${baseFolder}/school`)
-        : null
-
-      const collegeUrl = collegeProof
-        ? await uploadFile(collegeProof, `${baseFolder}/college`)
-        : null
-
-      // ✅ STEP 3: Update player with ALL file URLs
-      const { error: updateError } = await supabase
-        .from("players")
-        .update({
-          birth_certificate_url: birthUrl,
-          aadhar_card_url: aadharUrl,
-          belt_certificate_url: beltUrl,
-          school_bonafide_url: schoolUrl,
-          college_proof_url: collegeUrl
-        })
-        .eq("id", playerId)
-
-      if (updateError) {
-        console.error("Update error:", updateError)
-        alert("File upload failed")
-        setLoading(false)
-        return
-      }
-    }
 
     const { data: existingRegistration } = await supabase
       .from("registrations")
@@ -333,10 +250,67 @@ const tournamentId = params.id
     }
 
     // ✅ USE category_key FROM UTILS
+    // ✅ Upload files FIRST
+    const baseFolder = `bracketly/tournaments/${tournamentId}/players/${playerId}/documents`
+
+    const birthUrl = birthCert
+      ? await uploadFile(birthCert, `${baseFolder}/birth_certificate`)
+      : null
+
+    const aadharUrl = aadhar
+      ? await uploadFile(aadhar, `${baseFolder}/aadhar`)
+      : null
+
+    const beltUrl = beltCert
+      ? await uploadFile(beltCert, `${baseFolder}/belt`)
+      : null
+
+    const schoolUrl = schoolProof
+      ? await uploadFile(schoolProof, `${baseFolder}/school`)
+      : null
+
+    const collegeUrl = collegeProof
+      ? await uploadFile(collegeProof, `${baseFolder}/college`)
+      : null
+
+    // ✅ INSERT FULL DATA INTO registrations
     await supabase.from("registrations").insert({
       player_id: playerId,
       tournament_id: tournamentId,
-      category_key, // ✅ FIXED
+
+      // BASIC INFO
+      age: Number(age),
+      weight: Number(weight),
+      gender,
+      belt_rank: beltRank,
+
+      district,
+      academy,
+
+      // STUDENT
+      student_type: studentType,
+      school_name: studentType === "school" ? schoolName : null,
+      college_name: studentType === "college" ? collegeName : null,
+
+      // CATEGORY
+      age_category,
+      weight_category,
+      category_key,
+
+      // ADDRESS
+      address_line1: address1,
+      address_line2: address2,
+      city,
+      state: stateName,
+      pincode,
+
+      // FILES
+      birth_certificate_url: birthUrl,
+      aadhar_card_url: aadharUrl,
+      belt_certificate_url: beltUrl,
+      school_bonafide_url: schoolUrl,
+      college_proof_url: collegeUrl,
+
       approved: false
     })
 
