@@ -62,8 +62,7 @@ export default function PlayerDashboard() {
           id,
           approved,
           category_key,
-          tournament:tournaments(name),
-          bracket:brackets(id)
+          tournament:tournaments(name)
         `)
         .eq("player_id", playerData.id)
 
@@ -114,16 +113,9 @@ export default function PlayerDashboard() {
               )}
             </p>
 
-            {reg.bracket ? (
-              <a
-                href={`/player/bracket/${reg.bracket.id}`}
-                className="text-blue-600 underline"
-              >
-                View Bracket
-              </a>
-            ) : (
-              <p className="text-gray-500">Bracket not generated yet</p>
-            )}
+            <p className="text-gray-500">
+            Bracket will be available after matches are generated
+            </p>
           </div>
         ))}
       </div>
