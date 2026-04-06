@@ -10,7 +10,7 @@ export default function HomePage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "http://localhost:3000/tournaments",
+        redirectTo: "${window.location.origin}/player/dashboard",
       },
     })
 
