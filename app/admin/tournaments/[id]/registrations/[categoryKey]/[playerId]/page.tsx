@@ -60,7 +60,7 @@ export default function PlayerDetailPage() {
       `)
       .eq("tournament_id", id)
       .eq("category_key", categoryKey)
-      .eq("players.id", playerId)
+      .eq("player_id", playerId)
       .single()
 
     if (!error) setData(data)
