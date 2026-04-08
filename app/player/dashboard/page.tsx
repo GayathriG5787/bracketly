@@ -54,19 +54,60 @@ export default function PlayerDashboard() {
       setPlayer(playerData)
 
       // ========================
-      // 🏆 STEP 3: Fetch Registrations (UPDATED)
+      // 🏆 STEP 3: Fetch Registrations + Check Brackets
       // ========================
-      const { data: regData } = await supabase
-        .from("registrations")
-        .select(`
-          id,
-          approved,
-          category_key,
-          tournament:tournaments(name)
-        `)
-        .eq("player_id", playerData.id)
+const { data } = await supabase
+  .from("registrations")
+  .select(`
+    id,
+    approved,
+    category_key,
+    tournament:tournaments(id, name)
+  `)
+  .eq("player_id", playerData.id)
 
-      setRegistrations(regData || [])
+    // ✅ 👇 ADD TYPE HERE
+    const regData = (data ?? []) as unknown as {
+      id: string
+      approved: boolean
+      category_key: string
+      tournament: {
+        id: string
+        name: string
+      }
+    }[]
+
+      if (!regData) {
+        setRegistrations([])
+        return
+      }
+
+      // 🔥 Get all tournament IDs
+      const tournamentIds = regData.map(
+        (r) => r.tournament?.id
+      ).filter(Boolean)
+
+      // 🔥 Fetch matches (bracket = matches exist)
+      const { data: matches } = await supabase
+        .from("matches")
+        .select("tournament_id, category_key")
+        .in("tournament_id", tournamentIds)
+
+      // 🔥 Attach hasBracket flag
+      const registrationsWithMatches = regData.map((reg) => {
+        const hasBracket = matches?.some(
+          (m) =>
+            m.tournament_id === reg.tournament?.id &&
+            m.category_key === reg.category_key
+        )
+
+        return {
+          ...reg,
+          hasBracket,
+        }
+      })
+
+      setRegistrations(registrationsWithMatches)
     }
 
     loadDashboard()
@@ -113,9 +154,22 @@ export default function PlayerDashboard() {
               )}
             </p>
 
-            <p className="text-gray-500">
-            Bracket will be available after matches are generated
-            </p>
+            {reg.hasBracket ? (
+              <button
+                onClick={() =>
+                  router.push(
+                    `/player/bracket/${reg.tournament.id}/${reg.category_key}`
+                  )
+                }
+                className="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
+              >
+                View Bracket
+              </button>
+            ) : (
+              <p className="text-gray-500">
+                Bracket not generated yet
+              </p>
+            )}
           </div>
         ))}
       </div>
