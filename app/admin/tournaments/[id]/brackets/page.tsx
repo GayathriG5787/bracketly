@@ -52,12 +52,12 @@ export default function BracketsPage({ params }: any) {
           id,
           approved,
           category_key,
+          gender,
+          age_category,
+          weight_category,
           players (
             id,
-            name,
-            gender,
-            age_category,
-            weight_category
+            name
           )
         `)
         .eq("tournament_id", tournamentId)
@@ -95,7 +95,7 @@ useEffect(() => {
 
     if (!categoryKey) return
 
-    const { gender, age_category: age, weight_category: weight } = p
+    const { gender, age_category: age, weight_category: weight } = reg
 
     if (!grouped[gender]) grouped[gender] = {}
     if (!grouped[gender][age]) grouped[gender][age] = {}
