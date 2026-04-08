@@ -60,6 +60,11 @@ export default function PlayerBracketPage() {
     return <div className="p-8">Loading bracket...</div>
   }
   
+const getStyle = (name: string, isWinner: boolean) => {
+if (name === "TBD" || name === "BYE") return "text-gray-400"
+if (isWinner) return "font-bold text-green-600"
+return ""
+}
 
   return (
     <div className="p-8 overflow-x-auto">
@@ -85,6 +90,18 @@ export default function PlayerBracketPage() {
                 const isP1Winner = match.winner_id === match.player1_id
                 const isP2Winner = match.winner_id === match.player2_id
 
+                    const p1Name = match.player1
+                        ? match.player1.name
+                        : match.round === 1
+                        ? "BYE"
+                        : "TBD"
+
+                    const p2Name = match.player2
+                        ? match.player2.name
+                        : match.round === 1
+                        ? "BYE"
+                        : "TBD"
+
                 return (
                   <div
                     key={match.id}
@@ -92,29 +109,13 @@ export default function PlayerBracketPage() {
                   >
 
                     {/* PLAYER 1 */}
-                    <div
-                      className={`p-1 border-b ${
-                        isP1Winner ? "font-bold text-green-600" : ""
-                      }`}
-                    >
-                      {match.player1
-                        ? match.player1.name
-                        : match.round === 1
-                        ? "BYE"
-                        : "TBD"}
+                    <div className={`p-1 border-b ${getStyle(p1Name, isP1Winner)}`}>
+                        {p1Name}
                     </div>
 
                     {/* PLAYER 2 */}
-                    <div
-                      className={`p-1 ${
-                        isP2Winner ? "font-bold text-green-600" : ""
-                      }`}
-                    >
-                      {match.player2
-                        ? match.player2.name
-                        : match.round === 1
-                        ? "BYE"
-                        : "TBD"}
+                    <div className={`p-1 ${getStyle(p2Name, isP2Winner)}`}>
+                        {p2Name}
                     </div>
 
                   </div>
