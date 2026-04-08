@@ -17,6 +17,8 @@ const tournamentId = params.id
   const [name, setName] = useState("")
   const [userEmail, setUserEmail] = useState("")
   const [phone, setPhone] = useState("")
+  const [isEditingPhone, setIsEditingPhone] = useState(false)
+  const [player, setPlayer] = useState<any>(null)
   const [district, setDistrict] = useState("")
   const [age, setAge] = useState("")
   const [weight, setWeight] = useState("")
@@ -100,6 +102,30 @@ const tournamentId = params.id
     if (tournamentId) fetchTournament()
 
   }, [tournamentId])
+
+  useEffect(() => {
+  const fetchPlayer = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { data: playerData } = await supabase
+      .from("players")
+      .select("*")
+      .eq("user_id", user.id)
+      .single()
+
+    if (playerData) {
+      setPlayer(playerData)
+
+      if (playerData.phone) {
+        setPhone(playerData.phone)
+      }
+    }
+  }
+
+  fetchPlayer()
+}, [])
 
     const addAchievement = () => {
       if (!level || !medalType || !year || !achievementFile) {
@@ -211,6 +237,14 @@ const tournamentId = params.id
       .select("*")
       .eq("user_id", user.id)
       .single()
+
+    // ✅ SAVE PHONE (NEW LOGIC)
+    if (!playerData?.phone || isEditingPhone) {
+      await supabase
+        .from("players")
+        .update({ phone })
+        .eq("id", playerData.id)
+    }
 
     // ✅ Auto-create player
     if (!playerData) {
@@ -408,6 +442,8 @@ await supabase.from("player_achievements").insert(achievementRows)
     setParticipations([{ level: "", file: null }])
     setAchievementFile(null)
 
+    setIsEditingPhone(false)
+
     setLoading(false)
   }
 
@@ -456,11 +492,25 @@ await supabase.from("player_achievements").insert(achievementRows)
 
       <div>
         <label className="block text-sm font-medium mb-1">Phone</label>
-        <input
-          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+
+        <div className="flex gap-2 items-center">
+          <input
+            className="w-full border rounded-lg px-3 py-2"
+            value={phone}
+            disabled={!isEditingPhone && !!player?.phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+
+          {player?.phone && !isEditingPhone && (
+            <button
+              type="button"
+              onClick={() => setIsEditingPhone(true)}
+              className="bg-gray-500 text-white px-3 py-1 rounded"
+            >
+              Edit
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Age */}
