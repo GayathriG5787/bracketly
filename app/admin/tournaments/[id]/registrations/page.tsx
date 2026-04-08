@@ -49,22 +49,24 @@ export default function RegistrationsPage({ params }: any) {
         id,
         approved,
         category_key,
+        age,
+        weight,
+        gender,
+        belt_rank,
+        district,
+        academy,
+        student_type,
+        school_name,
+        college_name,
+        age_category,
+        weight_category,
+
         players (
           id,
           name,
           email,
           phone,
-          district,
-          age,
-          weight,
-          gender,
-          belt_rank,
-          student_type,
-          school_name,
-          college_name,
-          academy,
-          age_category,
-          weight_category,
+
           player_achievements (level, medal_type, year),
           player_participations (level, year)
         )
@@ -83,24 +85,12 @@ export default function RegistrationsPage({ params }: any) {
   const approvePlayer = async (regId: string, player: any) => {
     const { age_category, weight_category, category_key } = getCategory(player)
 
-    // ✅ Update player (ONLY category details that belong to player)
-    const { error: playerError } = await supabase
-      .from("players")
-      .update({
-        age_category,
-        weight_category
-      })
-      .eq("id", player.id)
-
-    if (playerError) {
-      console.error("Player update error:", playerError)
-      return
-    }
-
     // ✅ Update registration (category_key + approval)
     const { error: regError } = await supabase
       .from("registrations")
       .update({
+        age_category,
+        weight_category,
         category_key,
         approved: true
       })
@@ -119,14 +109,14 @@ export default function RegistrationsPage({ params }: any) {
   const grouped: any = {}
 
   registrations.forEach((reg) => {
-  const p = reg.players
+  const p = reg.players || {}
   const categoryKey = reg.category_key  // ✅ FIX
 
   if (!categoryKey) return  
 
-    const gender = p.gender
-    const age = p.age_category
-    const weight = p.weight_category
+      const gender = reg.gender
+      const age = reg.age_category
+      const weight = reg.weight_category
 
     if (!grouped[gender]) grouped[gender] = {}
     if (!grouped[gender][age]) grouped[gender][age] = {}

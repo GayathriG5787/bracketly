@@ -16,33 +16,35 @@ export default function PlayerDetailPage() {
       .select(`
         id,
         approved,
+
+        district,
+        age,
+        weight,
+        gender,
+        belt_rank,
+
+        address_line1,
+        address_line2,
+        city,
+        state,
+        pincode,
+
+        student_type,
+        school_name,
+        college_name,
+        academy,
+
+        birth_certificate_url,
+        aadhar_card_url,
+        belt_certificate_url,
+        school_bonafide_url,
+        college_proof_url,
+
         players (
           id,
           name,
           email,
           phone,
-          district,
-          age,
-          weight,
-          gender,
-          belt_rank,
-
-          address_line1,
-          address_line2,
-          city,
-          state,
-          pincode,
-
-          student_type,
-          school_name,
-          college_name,
-          academy,
-
-          birth_certificate_url,
-          aadhar_card_url,
-          belt_certificate_url,
-          school_bonafide_url,
-          college_proof_url,
 
           player_achievements (
             level,
@@ -93,7 +95,7 @@ export default function PlayerDetailPage() {
 
   if (!data) return <p className="p-6">Loading...</p>
 
-  const player = data.players
+  const player = data.players || {}
 
   return (
     <div className="p-6 space-y-6">
@@ -105,43 +107,43 @@ export default function PlayerDetailPage() {
         <p><strong>Name:</strong> {player.name}</p>
         <p><strong>Email:</strong> {player.email}</p>
         <p><strong>Phone:</strong> {player.phone}</p>
-        <p><strong>District:</strong> {player.district}</p>
-        <p><strong>Age:</strong> {player.age}</p>
-        <p><strong>Weight:</strong> {player.weight}</p>
-        <p><strong>Gender:</strong> {player.gender}</p>
-        <p><strong>Belt Rank:</strong> {player.belt_rank}</p>
+        <p><strong>District:</strong> {data.district}</p>
+        <p><strong>Age:</strong> {data.age}</p>
+        <p><strong>Weight:</strong> {data.weight}</p>
+        <p><strong>Gender:</strong> {data.gender}</p>
+        <p><strong>Belt Rank:</strong> {data.belt_rank}</p>
       </div>
 
       {/* ADDRESS */}
       <div>
         <h3 className="font-semibold text-lg">Address</h3>
-        <p>{player.address_line1}</p>
-        <p>{player.address_line2}</p>
-        <p>{player.city}, {player.state} - {player.pincode}</p>
+        <p>{data.address_line1}</p>
+        <p>{data.address_line2}</p>
+        <p>{data.city}, {data.state} - {data.pincode}</p>
       </div>
 
       {/* STUDENT INFO */}
       <div>
         <h3 className="font-semibold text-lg">Student Info</h3>
-        <p><strong>Type:</strong> {player.student_type || "N/A"}</p>
-        {player.school_name && <p><strong>School:</strong> {player.school_name}</p>}
-        {player.college_name && <p><strong>College:</strong> {player.college_name}</p>}
-        {player.academy && <p><strong>Academy:</strong> {player.academy}</p>}
+        <p><strong>Type:</strong> {data.student_type  || "N/A"}</p>
+        {data.school_name && <p><strong>School:</strong> {player.school_name}</p>}
+        {data.college_name && <p><strong>College:</strong> {player.college_name}</p>}
+        {data.academy && <p><strong>Academy:</strong> {player.academy}</p>}
       </div>
 
       {/* DOCUMENTS */}
       <div>
         <h3 className="font-semibold text-lg">Documents</h3>
 
-        {player.birth_certificate_url && (
+        {data.birth_certificate_url && (
           <p>
-            <a href={player.birth_certificate_url} target="_blank" className="text-blue-600 underline">
+            <a href={data.birth_certificate_url} target="_blank" className="text-blue-600 underline">
               View Birth Certificate
             </a>
           </p>
         )}
 
-        {player.aadhar_card_url && (
+        {data.aadhar_card_url && (
           <p>
             <a href={player.aadhar_card_url} target="_blank" className="text-blue-600 underline">
               View Aadhar Card
@@ -149,7 +151,7 @@ export default function PlayerDetailPage() {
           </p>
         )}
 
-        {player.belt_certificate_url && (
+        {data.belt_certificate_url && (
           <p>
             <a href={player.belt_certificate_url} target="_blank" className="text-blue-600 underline">
               View Belt Certificate
@@ -157,7 +159,7 @@ export default function PlayerDetailPage() {
           </p>
         )}
 
-        {player.school_bonafide_url && (
+        {data.school_bonafide_url && (
           <p>
             <a href={player.school_bonafide_url} target="_blank" className="text-blue-600 underline">
               View School Bonafide
@@ -165,7 +167,7 @@ export default function PlayerDetailPage() {
           </p>
         )}
 
-        {player.college_proof_url && (
+        {data.college_proof_url && (
           <p>
             <a href={player.college_proof_url} target="_blank" className="text-blue-600 underline">
               View College Proof

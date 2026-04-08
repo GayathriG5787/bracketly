@@ -16,11 +16,13 @@ export default function PlayersListPage() {
       .select(`
         id,
         category_key,
+
+        district,
+        belt_rank,
+
         players (
           id,
-          name,
-          district,
-          belt_rank
+          name
         )
       `)
       .eq("tournament_id", id)
@@ -48,7 +50,7 @@ export default function PlayersListPage() {
 
         {players.map((reg: any) => (
           <div
-            key={reg.players.id}
+            key={reg.id}
             onClick={() =>
               router.push(
                 `/admin/tournaments/${id}/registrations/${categoryKey}/${reg.players.id}`
@@ -56,9 +58,9 @@ export default function PlayersListPage() {
             }
             className="border p-3 rounded cursor-pointer hover:bg-gray-100"
           >
-            <p><strong>Name:</strong> {reg.players.name}</p>
-            <p><strong>District:</strong> {reg.players.district}</p>
-            <p><strong>Belt:</strong> {reg.players.belt_rank}</p>
+            <p><strong>Name:</strong> {reg.players?.name}</p>
+            <p><strong>District:</strong> {reg.district}</p>
+            <p><strong>Belt:</strong> {reg.belt_rank}</p>
           </div>
         ))}
 
