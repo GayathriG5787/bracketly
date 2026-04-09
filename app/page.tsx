@@ -18,26 +18,33 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
+    <div className="max-w-4xl mx-auto flex flex-col items-center">
+    <div className="min-h-screen flex flex-col items-center justify-center text-center px-6 bg-gradient-to-b from-white to-gray-50">
+
+      <p className="text-sm font-medium text-indigo-600 bg-indigo-100 px-4 py-1 rounded-full mb-4">
+        Smart Tournament Management
+      </p>
 
       {/* Title */}
-      <h1 className="text-4xl font-bold mb-4">
-        🏆 Bracketly
+      <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
+        Smart Tournament <br />
+        Management Made{" "}
+        <span className="text-indigo-600">Simple</span>
       </h1>
 
       {/* Subtitle */}
-      <p className="text-gray-600 text-lg mb-8 max-w-md">
+      <p className="text-gray-600 text-lg md:text-xl mb-10 max-w-2xl">
         Smart Tournament Management System for seamless player registration,
         bracket generation, and match tracking.
       </p>
 
       {/* Buttons */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
 
         {/* View tournaments */}
         <Link
           href="/tournaments"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-blue-700 transition"
+          className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-indigo-700 transition"
         >
           View Tournaments
         </Link>
@@ -45,7 +52,7 @@ export default function HomePage() {
         {/* ✅ Login as Player (Google OAuth) */}
         <button
           onClick={handleGoogleLogin}
-          className="bg-red-500 text-white px-6 py-3 rounded-lg text-lg hover:bg-red-600 transition"
+          className="bg-white border border-gray-300 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-100 transition"
         >
           Login as Player (Google)
         </button>
@@ -53,12 +60,13 @@ export default function HomePage() {
         {/* ✅ Login as Admin */}
         <Link
           href="/admin/login"
-          className="bg-gray-800 text-white px-6 py-3 rounded-lg text-lg hover:bg-gray-900 transition"
+          className="text-gray-500 text-sm mt-2 hover:text-gray-700 transition"
         >
-          Login as Admin
+          Admin Login →
         </Link>
 
       </div>
+    </div>
     </div>
   )
 }
