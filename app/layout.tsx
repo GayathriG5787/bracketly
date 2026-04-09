@@ -24,8 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-    <body>
-      {children}
+    <body className="bg-background font-sans">
+      <main className="max-w-[1400px] mx-auto px-3 lg:px-6">
+        {children}
+      </main>
     </body>
     </html>
   );

@@ -50,7 +50,7 @@ useEffect(() => {
   }
 
   if (loading) {
-    return <div className="p-8 bg-background min-h-screen">Loading tournaments...</div>
+    return <div className="py-8">Loading tournaments...</div>
   }
 
   return (
@@ -58,7 +58,7 @@ useEffect(() => {
 
       <div className="mb-10">
         <h1 className="text-4xl font-bold mb-2">Browse Tournaments</h1>
-        <p className="text-muted">
+        <p className="text-xl text-muted">
           Find and register for upcoming tournaments in your area.
         </p>
       </div>
