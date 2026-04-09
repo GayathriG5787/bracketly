@@ -1,6 +1,5 @@
-import type { Config } from "tailwindcss"
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
     "./pages/**/*.{js,ts,jsx,tsx}",
@@ -10,12 +9,12 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#4169E1", // Royal Blue
-          hover: "#3558c5",
-          light: "#E6ECFF",
+          DEFAULT: "#1E3A8A",   // Dark Royal Blue (main)
+          light: "#3B5BDB",     // lighter shade
+          dark: "#172554",      // deeper shade
         },
         success: {
-          DEFAULT: "#059669", // Emerald (for winner/status)
+          DEFAULT: "#059669",
           light: "#D1FAE5",
         },
         border: "#E5E7EB",
@@ -36,5 +35,3 @@ const config: Config = {
   },
   plugins: [],
 }
-
-export default config
