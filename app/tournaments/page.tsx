@@ -50,57 +50,79 @@ useEffect(() => {
   }
 
   if (loading) {
-    return <div className="p-8">Loading tournaments...</div>
+    return <div className="p-8 bg-background min-h-screen">Loading tournaments...</div>
   }
 
   return (
     <div className="p-8">
 
-      {/* ✅ UPDATED HEADER WITH LOGOUT */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Tournaments</h1>
-
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold mb-2">Browse Tournaments</h1>
+        <p className="text-muted">
+          Find and register for upcoming tournaments in your area.
+        </p>
       </div>
 
       {tournaments.length === 0 ? (
         <p>No tournaments available</p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           
         {tournaments.map((tournament) => (
-          <div
-            key={tournament.id}
-            className="border rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer"
-          >
-            <Link href={`/tournaments/${tournament.id}`}>
-              <div>
-                <h2 className="text-xl font-semibold mb-2">
-                  {tournament.name}
-                </h2>
+        <div
+          key={tournament.id}
+          className="border border-border rounded-xl p-6 shadow-card hover:shadow-lg transition bg-white"
+        >
+          
+          {/* Top Row */}
+          <div className="flex justify-between items-center mb-4">
+            
+            {/* Level Badge */}
+            <span className="text-xs px-3 py-1 rounded-full bg-background text-primary font-medium">
+              {tournament.level || "Open"}
+            </span>
 
-                <p className="text-gray-600 mb-1">
-                  📍 {tournament.location}
-                </p>
+            {/* Status */}
+            <span className="text-success text-sm font-medium">
+              ● Registration Open
+            </span>
 
-                <p className="text-gray-600 mb-1">
-                  📅 {new Date(tournament.tournament_date).toDateString()}
-                </p>
+          </div>
 
-                {tournament.level && (
-                  <p className="text-sm mb-3">
-                    🏆 {tournament.level} Level
-                  </p>
-                )}
-              </div>
+          {/* Title */}
+          <h2 className="text-lg font-semibold mb-3">
+            {tournament.name}
+          </h2>
+
+          {/* Location */}
+          <p className="text-sm text-muted mb-1">
+            📍 {tournament.location}
+          </p>
+
+          {/* Date */}
+          <p className="text-sm text-muted mb-5">
+            📅 {new Date(tournament.tournament_date).toDateString()}
+          </p>
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            
+            <Link
+              href={`/tournaments/${tournament.id}`}
+              className="flex-1 border border-border rounded-lg px-4 py-2 text-sm text-center hover:bg-background transition"
+            >
+              View Details
             </Link>
 
             <Link
               href={`/tournaments/${tournament.id}/register`}
-              className="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="flex-1 bg-primary text-white rounded-lg px-4 py-2 text-sm text-center hover:bg-primary-dark transition"
             >
               Register
             </Link>
+
           </div>
+        </div>
         ))}
 
         </div>
