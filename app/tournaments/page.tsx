@@ -115,7 +115,7 @@ useEffect(() => {
             </Link>
 
             <Link
-              href={`/tournaments/${tournament.id}/register`}
+              href={`/player/tournaments/${tournament.id}/register`}
               className="flex-1 bg-primary text-white rounded-lg px-4 py-2 text-sm text-center hover:bg-primary-dark transition"
             >
               Register
