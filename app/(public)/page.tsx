@@ -36,9 +36,19 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-50 selection:text-blue-600">
 
-      {/* --- HERO SECTION --- */}
-      <section className="pt-32 pb-16 lg:pt-52 lg:pb-32 overflow-hidden border-b border-slate-50">
-        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+    {/* --- HERO SECTION --- */}
+    <section className="relative flex flex-col border-b border-slate-50 overflow-hidden"
+  style={{ height: 'calc(100vh - 64px)', marginTop: '64px' }}>
+      
+      {/* 1. min-h-screen makes the section exactly 100% of the viewport height.
+          2. flex flex-col justify-center centers the content vertically.
+          3. pt-20 (Padding Top) ensures the content doesn't start behind the fixed navbar.
+      */}
+      
+      <div className="max-w-7xl mx-auto px-6 w-full pt-8">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Left Column: Text Content */}
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 text-[#4169E1] text-[12px] font-bold tracking-[0.2em] uppercase mb-6">
               <span className="w-1.5 h-1.5 bg-[#4169E1] rounded-full" />
@@ -63,6 +73,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* Right Column: Visuals */}
           <div className="hidden lg:block relative">
             <div className="border border-slate-200 bg-white p-3 rounded-xl rotate-2 shadow-sm">
               <img 
@@ -71,19 +82,23 @@ export default function HomePage() {
                 className="rounded-lg grayscale-[0.5] hover:grayscale-0 transition-all duration-700"
               />
             </div>
+            
+            {/* Floating Bracket Status Card */}
             <div className="absolute -bottom-6 -left-10 border border-slate-200 bg-white p-3 rounded-xl -rotate-3 shadow-xl">
-               <div className="bg-slate-50 p-4 rounded border border-slate-100 w-48 h-32 flex flex-col justify-between">
+              <div className="bg-slate-50 p-4 rounded border border-slate-100 w-48 h-32 flex flex-col justify-between">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Bracket Status</span>
                     <Zap size={12} className="text-yellow-400" fill="currentColor" />
                   </div>
                   <div className="text-lg font-bold">Auto-Gen Active</div>
                   <div className="w-full bg-slate-200 h-1 rounded" />
-               </div>
+              </div>
             </div>
           </div>
+
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* --- CORE INFRASTRUCTURE (FEATURES) --- */}
       <section id="features" className="py-24 bg-white">
