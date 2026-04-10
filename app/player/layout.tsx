@@ -16,7 +16,7 @@ export default function PlayerShellLayout({ children }: { children: React.ReactN
 
   const navItems = [
     { name: "Dashboard", href: "/player/dashboard", icon: LayoutDashboard },
-    { name: "My Tournaments", href: "/player/tournaments", icon: Calendar },
+    { name: "My Tournaments", href: "/player/my-tournaments", icon: Calendar },
     { name: "Profile", href: "/player/profile", icon: UserIcon },
   ]
 
