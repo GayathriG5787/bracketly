@@ -2,988 +2,393 @@
 
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-import { useParams } from "next/navigation"
-import { getCategory } from "@/utils/category" // ✅ NEW
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
+import { getCategory } from "@/utils/category"
 import { beltOptions } from "@/utils/beltOptions"
+import { 
+  User, 
+  Phone, 
+  MapPin, 
+  FileText, 
+  Trophy, 
+  Medal, 
+  ChevronLeft, 
+  Upload,
+  CheckCircle2,
+  Award
+} from "lucide-react"
 
 export default function RegisterPlayer() {
-
-const params = useParams<{ id: string }>()
-const tournamentId = params.id
+  const params = useParams<{ id: string }>()
+  const tournamentId = params.id
+  const router = useRouter()
 
   const [tournament, setTournament] = useState<any>(null)
+  const [player, setPlayer] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [isEditingPhone, setIsEditingPhone] = useState(false)
 
+  // Form States
   const [name, setName] = useState("")
   const [userEmail, setUserEmail] = useState("")
   const [phone, setPhone] = useState("")
-  const [isEditingPhone, setIsEditingPhone] = useState(false)
-  const [player, setPlayer] = useState<any>(null)
   const [district, setDistrict] = useState("")
   const [age, setAge] = useState("")
   const [weight, setWeight] = useState("")
   const [gender, setGender] = useState("")
   const [beltRank, setBeltRank] = useState("")
-
   const [studentType, setStudentType] = useState("")
   const [schoolName, setSchoolName] = useState("")
   const [collegeName, setCollegeName] = useState("")
   const [academy, setAcademy] = useState("")
-
-  const [districtParticipations, setDistrictParticipations] = useState("")
-  const [stateParticipations, setStateParticipations] = useState("")
-  const [nationalParticipations, setNationalParticipations] = useState("")
-
-  const [achievements, setAchievements] = useState<any[]>([])
-  const [level, setLevel] = useState("")
-  const [medalType, setMedalType] = useState("")
-  const [year, setYear] = useState("")
-
-  const [loading, setLoading] = useState(false)
-
-  // ADDRESS
+  
+  // Address States
   const [address1, setAddress1] = useState("")
   const [address2, setAddress2] = useState("")
   const [city, setCity] = useState("")
   const [stateName, setStateName] = useState("")
   const [pincode, setPincode] = useState("")
 
-  // FILES
+  // Participations Logic
+  const [districtParticipations, setDistrictParticipations] = useState("")
+  const [stateParticipations, setStateParticipations] = useState("")
+  const [nationalParticipations, setNationalParticipations] = useState("")
+  const [participations, setParticipations] = useState<any[]>([])
+
+  // SYNC ARRAY LENGTH WITH COUNTS (Crucial to prevent duplicate admin views)
+  useEffect(() => {
+    const totalNeeded = Number(districtParticipations || 0) + 
+                        Number(stateParticipations || 0) + 
+                        Number(nationalParticipations || 0);
+    
+    setParticipations(prev => {
+      if (prev.length === totalNeeded) return prev;
+      if (prev.length > totalNeeded) return prev.slice(0, totalNeeded);
+      const extra = Array(totalNeeded - prev.length).fill({ level: "", file: null });
+      return [...prev, ...extra];
+    });
+  }, [districtParticipations, stateParticipations, nationalParticipations]);
+
+  // Achievements Logic
+  const [achievements, setAchievements] = useState<any[]>([])
+  const [level, setLevel] = useState("")
+  const [medalType, setMedalType] = useState("")
+  const [year, setYear] = useState("")
+  const [achievementFile, setAchievementFile] = useState<File | null>(null)
+
+  // Standard Documents
   const [birthCert, setBirthCert] = useState<File | null>(null)
   const [aadhar, setAadhar] = useState<File | null>(null)
   const [beltCert, setBeltCert] = useState<File | null>(null)
   const [schoolProof, setSchoolProof] = useState<File | null>(null)
   const [collegeProof, setCollegeProof] = useState<File | null>(null)
 
-  // DYNAMIC PARTICIPATIONS
-  const [participations, setParticipations] = useState([
-    { level: "", file: null as File | null }
-  ])
-
-  // ACHIEVEMENT FILES
-  const [achievementFile, setAchievementFile] = useState<File | null>(null)
-
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-      console.error("Logout error:", error)
-    } else {
-      router.replace("/") // go back to home
-    }
-}
-
   useEffect(() => {
-    const getUser = async () => {
+    const initData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push("/"); return; }
+      setUserEmail(user.email || "")
 
-      if (user?.email) {
-        setUserEmail(user.email)
-      }
-    }
-
-    getUser()
-  }, [])
-
-  useEffect(() => {
-
-    const fetchTournament = async () => {
-      const { data } = await supabase
-        .from("tournaments")
-        .select("*")
-        .eq("id", tournamentId)
-        .single()
-
-      setTournament(data)
-    }
-
-    if (tournamentId) fetchTournament()
-
-  }, [tournamentId])
-
-  useEffect(() => {
-  const fetchPlayer = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) return
-
-    const { data: playerData } = await supabase
-      .from("players")
-      .select("*")
-      .eq("user_id", user.id)
-      .single()
-
-    if (playerData) {
-      setPlayer(playerData)
-
-      if (playerData.phone) {
-        setPhone(playerData.phone)
-      }
-    }
-  }
-
-  fetchPlayer()
-}, [])
-
-    const addAchievement = () => {
-      if (!level || !medalType || !year || !achievementFile) {
-        alert("Fill all achievement fields + upload certificate")
-        return
-      }
-
-      setAchievements([
-        ...achievements,
-        {
-          level,
-          medal_type: medalType,
-          year: Number(year),
-          file: achievementFile // ✅ FIX: store file
-        }
+      const [{ data: tournData }, { data: playerData }] = await Promise.all([
+        supabase.from("tournaments").select("*").eq("id", tournamentId).single(),
+        supabase.from("players").select("*").eq("user_id", user.id).single()
       ])
 
-      // reset fields
-      setLevel("")
-      setMedalType("")
-      setYear("")
-      setAchievementFile(null) // ✅ important
+      setTournament(tournData)
+      if (playerData) {
+        setPlayer(playerData)
+        setName(playerData.name || "")
+        setPhone(playerData.phone || "")
+      }
     }
+    initData()
+  }, [tournamentId, router])
 
   const uploadFile = async (file: File, folder: string) => {
     const formData = new FormData()
     formData.append("file", file)
     formData.append("upload_preset", "bracketly_upload")
-
-    // 🔥 IMPORTANT: folder structure
     formData.append("folder", folder)
-
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/djtxsrxve/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    )
-
+    const res = await fetch("https://api.cloudinary.com/v1_1/djtxsrxve/upload", { method: "POST", body: formData })
     const data = await res.json()
     return data.secure_url
   }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-
-      e.preventDefault()
-      if (loading) return
-      setLoading(true)
-
-      // ✅ BASIC REQUIRED VALIDATION
-      if (
-        !name || !phone || !age || !weight || !gender || !beltRank ||
-        !address1 || !city || !stateName || !pincode ||
-        !birthCert || !aadhar || !beltCert
-      ) {
-        alert("Please fill all required fields and upload all documents")
-        setLoading(false)
-        return
-      }
-
-      // ✅ STUDENT VALIDATION
-      if (studentType === "school" && !schoolProof) {
-        alert("Please upload school bonafide")
-        setLoading(false)
-        return
-      }
-
-      if (studentType === "college" && !collegeProof) {
-        alert("Please upload college proof")
-        setLoading(false)
-        return
-      }
-
-      // ✅ PARTICIPATION VALIDATION
-      const totalParticipations =
-        Number(districtParticipations) +
-        Number(stateParticipations) +
-        Number(nationalParticipations)
-
-      if (totalParticipations > 0) {
-        if (participations.length !== totalParticipations) {
-          alert("Upload certificates for all participations")
-          setLoading(false)
-          return
-        }
-
-        for (let p of participations) {
-          if (!p.file) {
-            alert("All participation certificates are required")
-            setLoading(false)
-            return
-          }
-        }
-      }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-    if (userError || !user || !user.email) {
-      alert("User not logged in")
-      setLoading(false)
+  const addAchievement = () => {
+    if (!level || !medalType || !year || !achievementFile) {
+      alert("Fill all achievement fields + upload certificate")
       return
     }
+    setAchievements([...achievements, { level, medal_type: medalType, year: Number(year), file: achievementFile }])
+    setLevel(""); setMedalType(""); setYear(""); setAchievementFile(null)
+  }
 
-    const email = user.email
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (loading) return
+    setLoading(true)
 
-    let { data: playerData } = await supabase
-      .from("players")
-      .select("*")
-      .eq("user_id", user.id)
-      .single()
+    const totalP = Number(districtParticipations || 0) + Number(stateParticipations || 0) + Number(nationalParticipations || 0)
 
-    // ✅ SAVE PHONE (NEW LOGIC)
-    if (!playerData?.phone || isEditingPhone) {
-      await supabase
-        .from("players")
-        .update({ phone })
-        .eq("id", playerData.id)
-    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || !player) throw new Error("User data missing")
 
-    // ✅ Auto-create player
-    if (!playerData) {
-      const { data: newPlayer } = await supabase
-        .from("players")
-        .insert({
-          user_id: user.id,
-          name,
-          email: user.email,
-        })
-        .select()
-        .single()
-
-      playerData = newPlayer
-    }
-
-    const playerId = playerData.id
-
-    // ✅ USE CENTRALIZED CATEGORY LOGIC
-    const { age_category, weight_category, category_key } = getCategory({
-      age: Number(age),
-      weight: Number(weight),
-      gender
-    })
-
-    const { data: existingRegistration } = await supabase
-      .from("registrations")
-      .select("*")
-      .eq("player_id", playerId)
-      .eq("tournament_id", tournamentId)
-      .maybeSingle()
-
-    if (existingRegistration) {
-      alert("You have already registered")
-      setLoading(false)
-      return
-    }
-
-    // ✅ USE category_key FROM UTILS
-    // ✅ Upload files FIRST
-    const baseFolder = `bracketly/tournaments/${tournamentId}/players/${playerId}/documents`
-
-    const birthUrl = birthCert
-      ? await uploadFile(birthCert, `${baseFolder}/birth_certificate`)
-      : null
-
-    const aadharUrl = aadhar
-      ? await uploadFile(aadhar, `${baseFolder}/aadhar`)
-      : null
-
-    const beltUrl = beltCert
-      ? await uploadFile(beltCert, `${baseFolder}/belt`)
-      : null
-
-    const schoolUrl = schoolProof
-      ? await uploadFile(schoolProof, `${baseFolder}/school`)
-      : null
-
-    const collegeUrl = collegeProof
-      ? await uploadFile(collegeProof, `${baseFolder}/college`)
-      : null
-
-    // ✅ INSERT FULL DATA INTO registrations
-    await supabase.from("registrations").insert({
-      player_id: playerId,
-      tournament_id: tournamentId,
-
-      // BASIC INFO
-      age: Number(age),
-      weight: Number(weight),
-      gender,
-      belt_rank: beltRank,
-
-      district,
-      academy,
-
-      // STUDENT
-      student_type: studentType,
-      school_name: studentType === "school" ? schoolName : null,
-      college_name: studentType === "college" ? collegeName : null,
-
-      // CATEGORY
-      age_category,
-      weight_category,
-      category_key,
-
-      // ADDRESS
-      address_line1: address1,
-      address_line2: address2,
-      city,
-      state: stateName,
-      pincode,
-
-      // FILES
-      birth_certificate_url: birthUrl,
-      aadhar_card_url: aadharUrl,
-      belt_certificate_url: beltUrl,
-      school_bonafide_url: schoolUrl,
-      college_proof_url: collegeUrl,
-
-      approved: false
-    })
-
-    if (achievements.length > 0) {
-      const rows = achievements.map(a => ({
-        player_id: playerId,
-        level: a.level,
-        medal_type: a.medal_type,
-        year: a.year
-      }))
-
-    const achievementRows = await Promise.all(
-      achievements.map(async (a) => ({
-        player_id: playerId,
-        level: a.level,
-        medal_type: a.medal_type,
-        year: a.year,
-        certificate_url: a.file
-          ? await uploadFile(
-              a.file,
-              `bracketly/tournaments/${tournamentId}/players/${playerId}/achievements`
-            )
-          : null
-      }))
-    )
-
-await supabase.from("player_achievements").insert(achievementRows)
-    }
-
-    // NEW PARTICIPATION LOGIC (WITH CERTIFICATES)
-
-    const participationRowsNew = await Promise.all(
-      participations.map(async (p) => ({
-        player_id: playerId,
-        level: p.level,
-        year: new Date().getFullYear(),
-        certificate_url: p.file
-          ? await uploadFile(
-              p.file,
-              `bracketly/tournaments/${tournamentId}/players/${playerId}/participations`
-            )
-          : null
-      }))
-    )
-
-    if (participationRowsNew.length > 0) {
-      const { error } = await supabase
-        .from("player_participations")
-        .insert(participationRowsNew)
-
-      if (error) {
-        alert("Participation insert failed")
+      if (isEditingPhone) {
+        await supabase.from("players").update({ phone }).eq("id", player.id)
       }
-    } else {
-      console.warn("No participation rows to insert ❗")
+
+      const { category_key, age_category, weight_category } = getCategory({ age: Number(age), weight: Number(weight), gender })
+
+      const baseFolder = `bracketly/tournaments/${tournamentId}/players/${player.id}/documents`
+      
+      const [birthUrl, aadharUrl, beltUrl, schoolUrl, collegeUrl] = await Promise.all([
+        uploadFile(birthCert!, `${baseFolder}/birth_certificate`),
+        uploadFile(aadhar!, `${baseFolder}/aadhar`),
+        uploadFile(beltCert!, `${baseFolder}/belt`),
+        schoolProof ? uploadFile(schoolProof, `${baseFolder}/school`) : null,
+        collegeProof ? uploadFile(collegeProof, `${baseFolder}/college`) : null,
+      ])
+
+      // 1. Registration
+      await supabase.from("registrations").insert({
+        player_id: player.id,
+        tournament_id: tournamentId,
+        age: Number(age), weight: Number(weight), gender, belt_rank: beltRank,
+        district, academy, student_type: studentType,
+        school_name: studentType === "school" ? schoolName : null,
+        college_name: studentType === "college" ? collegeName : null,
+        age_category, weight_category, category_key,
+        address_line1: address1, address_line2: address2, city, state: stateName, pincode,
+        birth_certificate_url: birthUrl, aadhar_card_url: aadharUrl, belt_certificate_url: beltUrl,
+        school_bonafide_url: schoolUrl, college_proof_url: collegeUrl, approved: false
+      })
+
+      // 2. Achievements
+      if (achievements.length > 0) {
+        const achievementRows = await Promise.all(achievements.map(async (a) => ({
+            player_id: player.id,
+            level: a.level,
+            medal_type: a.medal_type,
+            year: a.year,
+            certificate_url: await uploadFile(a.file, `bracketly/tournaments/${tournamentId}/players/${player.id}/achievements`)
+        })))
+        await supabase.from("player_achievements").insert(achievementRows)
+      }
+
+      // 3. Participations (CLEAN SLICE: Uploads exactly totalP rows)
+      if (totalP > 0) {
+        const finalParticipations = participations.slice(0, totalP);
+        const participationRows = await Promise.all(finalParticipations.map(async (p) => {
+            if (!p.file) return null;
+            return {
+                player_id: player.id,
+                level: p.level,
+                year: new Date().getFullYear(),
+                certificate_url: await uploadFile(p.file, `bracketly/tournaments/${tournamentId}/players/${player.id}/participations`)
+            }
+        }))
+        const validRows = participationRows.filter(r => r !== null);
+        if (validRows.length > 0) {
+            await supabase.from("player_participations").insert(validRows)
+        }
+      }
+
+      alert("Registration successful")
+      router.push('/player/dashboard')
+    } catch (err) {
+      console.error(err)
+      alert("Registration failed.")
+    } finally {
+      setLoading(false)
     }
-
-    alert("Registration successful")
-
-    // RESET
-    setName("")
-    setPhone("")
-    setDistrict("")
-    setAge("")
-    setWeight("")
-    setGender("")
-    setBeltRank("")
-
-    setStudentType("")
-    setSchoolName("")
-    setCollegeName("")
-    setAcademy("")
-
-    setDistrictParticipations("")
-    setStateParticipations("")
-    setNationalParticipations("")
-
-    setAchievements([])
-
-    // ✅ ADDRESS RESET
-    setAddress1("")
-    setAddress2("")
-    setCity("")
-    setStateName("")
-    setPincode("")
-
-    // ✅ FILE RESET
-    setBirthCert(null)
-    setAadhar(null)
-    setBeltCert(null)
-    setSchoolProof(null)
-    setCollegeProof(null)
-
-    // OPTIONAL (good practice)
-    setParticipations([{ level: "", file: null }])
-    setAchievementFile(null)
-
-    setIsEditingPhone(false)
-
-    setLoading(false)
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      
-      {/* ✅ HEADER WITH LOGOUT */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">
-          Player Registration
-        </h1>
-
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-        >
-          Logout
+    <div className="space-y-10 max-w-4xl mx-auto pb-20 p-4">
+      <div className="border-l-4 border-[#4169E1] pl-6">
+        <button onClick={() => router.back()} className="text-[10px] font-bold text-[#4169E1] uppercase tracking-widest flex items-center gap-1 mb-2 hover:opacity-70">
+          <ChevronLeft size={12} /> Back
         </button>
+        <h1 className="text-3xl font-bold tracking-tighter text-slate-900">Tournament Registration</h1>
       </div>
 
-      {tournament && (
-        <p className="mb-4 text-gray-600">
-          {tournament.name} ({tournament.level} Level)
-        </p>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Full Name</label>
-        <input
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
-        <input
-          value={userEmail}
-          disabled
-          className="w-full border rounded-lg px-3 py-2 bg-gray-100 cursor-not-allowed"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Phone</label>
-
-        <div className="flex gap-2 items-center">
-          <input
-            className="w-full border rounded-lg px-3 py-2"
-            value={phone}
-            disabled={!isEditingPhone && !!player?.phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-
-          {player?.phone && !isEditingPhone && (
-            <button
-              type="button"
-              onClick={() => setIsEditingPhone(true)}
-              className="bg-gray-500 text-white px-3 py-1 rounded"
-            >
-              Edit
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Age */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Age</label>
-        <input
-          type="number"
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={age}
-          onChange={(e) => setAge(e.target.value)}
-        />
-      </div>
-
-      {/* Weight */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Weight (kg)</label>
-        <input
-          type="number"
-          className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-        />
-      </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Gender</label>
-          <select
-            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-          >
-            <option value="">Select Gender</option>
-            <option>Male</option>
-            <option>Female</option>
-          </select>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Personal Info */}
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><User size={20} /></div>
+            <h2 className="text-xl font-bold text-slate-900">Personal Information</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField label="Full Name" value={name} onChange={setName} />
+            <InputField label="Email Address" value={userEmail} disabled />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+              <div className="flex gap-2">
+                <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" value={phone} disabled={!isEditingPhone && !!player?.phone} onChange={(e) => setPhone(e.target.value)} />
+                {player?.phone && !isEditingPhone && (
+                  <button type="button" onClick={() => setIsEditingPhone(true)} className="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl">Edit</button>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <InputField label="Age" type="number" value={age} onChange={setAge} />
+              <InputField label="Weight (kg)" type="number" value={weight} onChange={setWeight} />
+            </div>
+            <SelectField label="Gender" value={gender} onChange={setGender} options={["Male", "Female"]} />
+            <SelectField label="Belt Rank" value={beltRank} onChange={setBeltRank} options={beltOptions.map(b => b.value)} />
+          </div>
         </div>
 
-        {/* Belt */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Belt</label>
-          <select
-            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            value={beltRank}
-            onChange={(e) => setBeltRank(e.target.value)}
-          >
-            <option value="">Select Belt</option>
-            {beltOptions.map((b) => (
-              <option key={b.value} value={b.value}>
-                {b.label}
-              </option>
+        {/* RESTORED ADDRESS SECTION */}
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><MapPin size={20} /></div>
+            <h2 className="text-xl font-bold text-slate-900">Address Details</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2"><InputField label="Address Line 1" value={address1} onChange={setAddress1} /></div>
+            <InputField label="Address Line 2" value={address2} onChange={setAddress2} />
+            <InputField label="City" value={city} onChange={setCity} />
+            <InputField label="District" value={district} onChange={setDistrict} />
+            <div className="grid grid-cols-2 gap-4">
+              <InputField label="State" value={stateName} onChange={setStateName} />
+              <InputField label="Pincode" value={pincode} onChange={setPincode} />
+            </div>
+          </div>
+        </div>
+
+        {/* Documents */}
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-amber-50 rounded-lg text-amber-600"><FileText size={20} /></div>
+            <h2 className="text-xl font-bold text-slate-900">Required Documents</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FileUploader label="Birth Certificate" file={birthCert} onChange={setBirthCert} />
+            <FileUploader label="Aadhar Card" file={aadhar} onChange={setAadhar} />
+            <FileUploader label="Belt Certificate" file={beltCert} onChange={setBeltCert} />
+            <SelectField label="Student Status" value={studentType} onChange={setStudentType} options={["school", "college", "none"]} />
+            
+            {studentType === "school" && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                <InputField label="School Name" value={schoolName} onChange={setSchoolName} />
+                <FileUploader label="School Bonafide" file={schoolProof} onChange={setSchoolProof} />
+              </div>
+            )}
+            {studentType === "college" && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                <InputField label="College Name" value={collegeName} onChange={setCollegeName} />
+                <FileUploader label="College Proof" file={collegeProof} onChange={setCollegeProof} />
+              </div>
+            )}
+            <div className="md:col-span-2">
+              <InputField label="Academy (Optional)" value={academy} onChange={setAcademy} />
+            </div>
+          </div>
+        </div>
+
+        {/* Participations */}
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Award size={20} /></div>
+            <h2 className="text-xl font-bold text-slate-900">Past Participations</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <InputField label="District Count" type="number" value={districtParticipations} onChange={setDistrictParticipations} />
+            <InputField label="State Count" type="number" value={stateParticipations} onChange={setStateParticipations} />
+            <InputField label="National Count" type="number" value={nationalParticipations} onChange={setNationalParticipations} />
+          </div>
+          <div className="space-y-4">
+            {[...Array(Number(districtParticipations || 0))].map((_, i) => (
+              <FileUploader key={`dist-${i}`} label={`District Certificate ${i + 1}`} file={participations[i]?.file} onChange={(f: File) => {
+                const up = [...participations]; up[i] = { level: "district", file: f }; setParticipations(up);
+              }} />
             ))}
-          </select>
-        </div>
-
-        <div className="bg-white shadow rounded-xl p-4 space-y-4">
-          <h2 className="text-lg font-semibold border-b pb-2">Address</h2>
-
-          {/* Address Line 1 */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Address Line 1</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={address1}
-              onChange={(e) => setAddress1(e.target.value)}
-            />
-          </div>
-
-          {/* Address Line 2 */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Address Line 2</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={address2}
-              onChange={(e) => setAddress2(e.target.value)}
-            />
-          </div>
-
-          {/* City */}
-          <div>
-            <label className="block text-sm font-medium mb-1">City</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            />
-          </div>
-
-          {/* District (reuse existing state) */}
-          <div>
-            <label className="block text-sm font-medium mb-1">District</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-            />
-          </div>
-
-          {/* State */}
-          <div>
-            <label className="block text-sm font-medium mb-1">State</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={stateName}
-              onChange={(e) => setStateName(e.target.value)}
-            />
-          </div>
-
-          {/* Pincode */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Pincode</label>
-            <input
-              className="w-full border rounded-lg px-3 py-2"
-              value={pincode}
-              onChange={(e) => setPincode(e.target.value)}
-            />
+            {[...Array(Number(stateParticipations || 0))].map((_, i) => {
+              const idx = Number(districtParticipations) + i;
+              return <FileUploader key={`state-${i}`} label={`State Certificate ${i + 1}`} file={participations[idx]?.file} onChange={(f: File) => {
+                const up = [...participations]; up[idx] = { level: "state", file: f }; setParticipations(up);
+              }} />
+            })}
+             {[...Array(Number(nationalParticipations || 0))].map((_, i) => {
+              const idx = Number(districtParticipations) + Number(stateParticipations) + i;
+              return <FileUploader key={`nat-${i}`} label={`National Certificate ${i + 1}`} file={participations[idx]?.file} onChange={(f: File) => {
+                const up = [...participations]; up[idx] = { level: "national", file: f }; setParticipations(up);
+              }} />
+            })}
           </div>
         </div>
 
-        <h2 className="font-semibold">Documents</h2>
-
-        {/* Birth Certificate */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Birth Certificate</label>
-
-          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-              Upload File
-            </span>
-
-            <span className="text-sm text-gray-600">
-              {birthCert ? birthCert.name : "No file selected"}
-            </span>
-
-            <input
-              type="file"
-              required
-              className="hidden"
-              onChange={(e) => setBirthCert(e.target.files?.[0] || null)}
-            />
-          </label>
-        </div>
-
-        {/* Aadhar */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Aadhar Card</label>
-
-          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-              Upload File
-            </span>
-
-            <span className="text-sm text-gray-600">
-              {aadhar ? aadhar.name : "No file selected"}
-            </span>
-
-            <input
-              type="file"
-              required
-              className="hidden"
-              onChange={(e) => setAadhar(e.target.files?.[0] || null)}
-            />
-          </label>
-        </div>
-
-        {/* Belt Certificate */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Belt Certificate</label>
-
-          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-              Upload File
-            </span>
-
-            <span className="text-sm text-gray-600">
-              {beltCert ? beltCert.name : "No file selected"}
-            </span>
-
-            <input
-              type="file"
-              required
-              className="hidden"
-              onChange={(e) => setBeltCert(e.target.files?.[0] || null)}
-            />
-          </label>
-        </div>
-
-        {/* STUDENT */}
-        <select className="border p-2 w-full"
-          value={studentType}
-          onChange={(e) => setStudentType(e.target.value)}>
-          <option value="">Student Type</option>
-          <option value="school">School</option>
-          <option value="college">College</option>
-          <option value="none">Not a Student</option>
-        </select>
-
-        {studentType === "school" && (
-          <input placeholder="School Name" className="border p-2 w-full"
-            value={schoolName} onChange={(e) => setSchoolName(e.target.value)} />
-        )}
-
-        {studentType === "college" && (
-          <input placeholder="College Name" className="border p-2 w-full"
-            value={collegeName} onChange={(e) => setCollegeName(e.target.value)} />
-        )}
-
-                {studentType === "school" && (
-          <div>
-            <label className="block text-sm font-medium mb-1">School Bonafide</label>
-            <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-              <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                Upload File
-              </span>
-              <span className="text-sm text-gray-600">
-                {schoolProof ? schoolProof.name : "No file selected"}
-              </span>
-              <input
-                type="file"
-                required
-                className="hidden"
-                onChange={(e) => setSchoolProof(e.target.files?.[0] || null)}
-              />
-            </label>
+        {/* Achievements Section */}
+        <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl">
+           <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-white/10 rounded-lg text-white"><Trophy size={20} /></div>
+            <h2 className="text-xl font-bold">Notable Achievements</h2>
           </div>
-        )}
-
-        {studentType === "college" && (
-          <div>
-            <label className="block text-sm font-medium mb-1">College Proof</label>
-            <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-              <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                Upload File
-              </span>
-              <span className="text-sm text-gray-600">
-                {collegeProof ? collegeProof.name : "No file selected"}
-              </span>
-              <input
-                type="file"
-                required
-                className="hidden"
-                onChange={(e) => setCollegeProof(e.target.files?.[0] || null)}
-              />
-            </label>
-          </div>
-        )}
-
-        <input placeholder="Academy (optional)" className="border p-2 w-full"
-          value={academy} onChange={(e) => setAcademy(e.target.value)} />
-
-        {/* PARTICIPATIONS */}
-        <h2 className="font-semibold">Participations</h2>
-
-        <input
-          type="number"
-          min={0}
-          placeholder="District"
-          className="border p-2 w-full"
-          value={districtParticipations}
-          onChange={(e) => {
-            const value = Math.max(0, Number(e.target.value))
-            setDistrictParticipations(String(value))
-          }}
-        />
-
-        {[...Array(Number(districtParticipations || 0))].map((_, i) => (
-          <div key={`district-${i}`}>
-            <label className="block text-sm font-medium mb-1">
-              District Certificate {i + 1}
-            </label>
-
-            <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-              <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                Upload File
-              </span>
-
-              <span className="text-sm text-gray-600">
-                {participations[i]?.file
-                  ? participations[i].file.name
-                  : "No file selected"}
-              </span>
-
-              <input
-                type="file"
-                required
-                className="hidden"
-                onChange={(e) => {
-                  const updated = [...participations]
-                  updated[i] = {
-                    level: "district",
-                    file: e.target.files?.[0] || null,
-                  }
-                  setParticipations(updated)
-                }}
-              />
-            </label>
-          </div>
-        ))}
-
-        <input
-          type="number"
-          min={0}
-          placeholder="State"
-          className="border p-2 w-full"
-          value={stateParticipations}
-          onChange={(e) => {
-            const value = Math.max(0, Number(e.target.value))
-            setStateParticipations(String(value))
-          }}
-        />
-
-        {[...Array(Number(stateParticipations || 0))].map((_, i) => {
-          const index = Number(districtParticipations) + i
-
-          return (
-            <div key={`state-${i}`}>
-              <label className="block text-sm font-medium mb-1">
-                State Certificate {i + 1}
-              </label>
-
-              <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-                <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                  Upload File
-                </span>
-
-                <span className="text-sm text-gray-600">
-                  {participations[index]?.file
-                    ? participations[index].file.name
-                    : "No file selected"}
-                </span>
-
-                <input
-                  type="file"
-                  required
-                  className="hidden"
-                  onChange={(e) => {
-                    const updated = [...participations]
-                    updated[index] = {
-                      level: "state",
-                      file: e.target.files?.[0] || null,
-                    }
-                    setParticipations(updated)
-                  }}
-                />
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <SelectField label="Level" value={level} onChange={setLevel} options={["district", "state", "national"]} dark />
+            <SelectField label="Medal" value={medalType} onChange={setMedalType} options={["gold", "silver", "bronze"]} dark />
+            <InputField label="Year" type="number" value={year} onChange={setYear} placeholder="YYYY" dark />
+            <div className="space-y-1">
+               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Certificate</label>
+               <input type="file" className="hidden" id="ach-file" onChange={e => setAchievementFile(e.target.files?.[0] || null)} />
+               <label htmlFor="ach-file" className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold cursor-pointer hover:bg-white/10 truncate transition-all">
+                <Upload size={14} /> {achievementFile ? achievementFile.name : "Upload File"}
+               </label>
             </div>
-          )
-        })}
+          </div>
+          <div className="flex justify-end pt-6">
+            <button type="button" onClick={addAchievement} className="w-full md:w-auto md:px-12 py-3 bg-[#4169E1] rounded-xl text-xs font-bold">Add Entry</button>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {achievements.map((a, i) => (
+              <div key={i} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-xs border border-white/5">
+                <Medal size={14} className="text-amber-400" /> <span className="capitalize">{a.level}</span> • <span className="capitalize">{a.medal_type}</span> ({a.year})
+              </div>
+            ))}
+          </div>
+        </div>
 
-        <input
-          type="number"
-          min={0}
-          placeholder="National"
-          className="border p-2 w-full"
-          value={nationalParticipations}
-          onChange={(e) => {
-            const value = Math.max(0, Number(e.target.value))
-            setNationalParticipations(String(value))
-          }}
-        />
-
-        {[...Array(Number(nationalParticipations || 0))].map((_, i) => {
-          const index =
-            Number(districtParticipations) +
-            Number(stateParticipations) +
-            i
-
-          return (
-            <div key={`national-${i}`}>
-              <label className="block text-sm font-medium mb-1">
-                National Certificate {i + 1}
-              </label>
-
-              <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-                <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                  Upload File
-                </span>
-
-                <span className="text-sm text-gray-600">
-                  {participations[index]?.file
-                    ? participations[index].file.name
-                    : "No file selected"}
-                </span>
-
-                <input
-                  type="file"
-                  required
-                  className="hidden"
-                  onChange={(e) => {
-                    const updated = [...participations]
-                    updated[index] = {
-                      level: "national",
-                      file: e.target.files?.[0] || null,
-                    }
-                    setParticipations(updated)
-                  }}
-                />
-              </label>
-            </div>
-          )
-        })}
-
-        {/* ACHIEVEMENTS */}
-        <h2 className="font-semibold">Achievements</h2>
-
-        <select className="border p-2 w-full"
-          value={level} onChange={(e) => setLevel(e.target.value)}>
-          <option value="">Level</option>
-          <option value="district">District</option>
-          <option value="state">State</option>
-          <option value="national">National</option>
-        </select>
-
-        <select className="border p-2 w-full"
-          value={medalType} onChange={(e) => setMedalType(e.target.value)}>
-          <option value="">Medal</option>
-          <option value="bronze">Bronze</option>
-          <option value="silver">Silver</option>
-          <option value="gold">Gold</option>
-        </select>
-
-        <input type="number" placeholder="Year"
-          className="border p-2 w-full"
-          value={year} onChange={(e) => setYear(e.target.value)} />
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Achievement Certificate
-          </label>
-
-          <label className="flex items-center gap-3 border p-2 rounded cursor-pointer">
-            <span className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-              Upload File
-            </span>
-          
-            <span className="text-sm text-gray-600">
-              {achievementFile ? achievementFile.name : "No file selected"}
-            </span>
-
-            <input
-              type="file"
-              className="hidden"
-              onChange={(e) => setAchievementFile(e.target.files?.[0] || null)}
-            />
-          </label>
-      </div>
-
-        <button type="button"
-          onClick={addAchievement}
-          className="bg-gray-500 text-white px-3 py-1 rounded">
-          Add Achievement
+        <button type="submit" disabled={loading} className={`w-full py-5 rounded-[1.5rem] font-bold text-sm tracking-widest uppercase flex items-center justify-center gap-3 transition-all ${loading ? 'bg-slate-200 text-slate-400' : 'bg-[#4169E1] text-white hover:bg-blue-700 shadow-lg shadow-blue-200'}`}>
+          {loading ? "Registering..." : <><CheckCircle2 size={18} /> Complete Registration</>}
         </button>
-
-        <div className="space-y-2">
-          {achievements.map((a, i) => (
-            <div key={i} className="bg-gray-100 px-3 py-2 rounded">
-              {a.level} • {a.medal_type} • {a.year}
-              <br />
-              <span className="text-xs text-gray-500">
-                {a.file?.name}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-        >
-          {loading ? "Registering..." : "Register"}
-        </button>
-
       </form>
+    </div>
+  )
+}
+
+function InputField({ label, dark, ...props }: any) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <input className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-[#4169E1] outline-none transition-all ${dark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} {...props} onChange={e => props.onChange(e.target.value)} />
+    </div>
+  )
+}
+
+function SelectField({ label, options, dark, ...props }: any) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <select className={`w-full px-4 py-3 border rounded-xl text-sm outline-none transition-all capitalize ${dark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} {...props} onChange={e => props.onChange(e.target.value)}>
+        <option value="" className="text-slate-900">Select {label}</option>
+        {options.map((opt: string) => <option key={opt} value={opt} className="text-slate-900">{opt}</option>)}
+      </select>
+    </div>
+  )
+}
+
+function FileUploader({ label, file, onChange }: any) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <label className="flex items-center justify-between gap-3 p-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-slate-100">
+        <span className="text-xs font-bold text-[#4169E1] flex items-center gap-2"><Upload size={14} /> {file ? "Change" : "Upload"}</span>
+        <span className="text-[10px] text-slate-500 font-medium truncate max-w-[150px]">{file ? file.name : "Certificate Required"}</span>
+        <input type="file" className="hidden" onChange={e => onChange(e.target.files?.[0] || null)} />
+      </label>
     </div>
   )
 }
