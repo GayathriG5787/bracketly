@@ -3,10 +3,9 @@
 import { supabase } from "@/lib/supabase"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { User, Trophy, ShieldCheck, Clock, ChevronRight, MapPin } from "lucide-react"
+import { Trophy, ShieldCheck, Clock, List } from "lucide-react"
 
 export default function PlayerDashboard() {
-  const [user, setUser] = useState<any>(null)
   const [player, setPlayer] = useState<any>(null)
   const [registrations, setRegistrations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -16,7 +15,6 @@ export default function PlayerDashboard() {
     const loadDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/"); return; }
-      setUser(user)
 
       let { data: playerData } = await supabase
         .from("players")
@@ -37,25 +35,12 @@ export default function PlayerDashboard() {
       }
       setPlayer(playerData)
 
-      const { data } = await supabase
+      const { data: regData } = await supabase
         .from("registrations")
-        .select(`id, approved, category_key, tournament:tournaments(id, name, location)`)
+        .select(`id, approved`)
         .eq("player_id", playerData.id)
 
-      const regData = (data ?? []) as any[]
-      const tournamentIds = regData.map((r) => r.tournament?.id).filter(Boolean)
-
-      const { data: matches } = await supabase
-        .from("matches")
-        .select("tournament_id, category_key")
-        .in("tournament_id", tournamentIds)
-
-      const registrationsWithMatches = regData.map((reg) => ({
-        ...reg,
-        hasBracket: matches?.some((m) => m.tournament_id === reg.tournament?.id && m.category_key === reg.category_key)
-      }))
-
-      setRegistrations(registrationsWithMatches)
+      setRegistrations(regData ?? [])
       setLoading(false)
     }
 
@@ -89,54 +74,27 @@ export default function PlayerDashboard() {
         ))}
       </div>
 
-      {/* Tournaments Section */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900">My Tournaments</h2>
-          <button onClick={() => router.push('/tournaments')} className="text-xs font-bold text-[#4169E1] uppercase tracking-wider hover:underline">Register for more</button>
+      {/* Quick Access Card */}
+      <div className="bg-[#4169E1]/5 border border-[#4169E1]/10 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Tournament Management</h2>
+          <p className="text-sm text-slate-500 mt-1 font-medium">Check your registration status and access live match brackets.</p>
         </div>
-
-        {registrations.length === 0 ? (
-          <div className="bg-white border border-dashed border-slate-200 rounded-[2rem] py-16 text-center">
-            <p className="text-slate-400 font-medium text-sm">You haven&apos;t joined any championships yet.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {registrations.map((reg) => (
-              <div key={reg.id} className="group bg-white border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between transition-all hover:border-[#4169E1]">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter ${reg.approved ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
-                      {reg.approved ? "Approved" : "Verification Pending"}
-                    </span>
-                    <span className="text-slate-300">|</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                      <MapPin size={10} /> {reg.tournament?.location || "TBD"}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#4169E1] transition-colors">{reg.tournament?.name}</h3>
-                  <p className="text-xs text-slate-500 font-medium mt-1 uppercase tracking-wider">Division: {reg.category_key}</p>
-                </div>
-
-                <div className="mt-6 md:mt-0 flex items-center gap-4">
-                  {reg.hasBracket ? (
-                    <button
-                      onClick={() => router.push(`/player/bracket/${reg.tournament.id}/${reg.category_key}`)}
-                      className="px-6 py-2.5 bg-[#4169E1] text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2"
-                    >
-                      Live Bracket <ChevronRight size={14} />
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 italic">
-                      Brackets Pending
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        <div className="flex gap-3 w-full md:w-auto">
+          <button 
+            onClick={() => router.push('/player/my-tournaments')}
+            className="flex-1 md:flex-none px-8 py-3 bg-[#4169E1] text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200"
+          >
+            <List size={16} /> My Tournaments
+          </button>
+          <button 
+            onClick={() => router.push('/tournaments')}
+            className="flex-1 md:flex-none px-8 py-3 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+          >
+            Find Events
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
