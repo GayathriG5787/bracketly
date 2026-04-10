@@ -147,18 +147,26 @@ export default function PlayerDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           
           {/* STATS GRID */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* STATS GRID - Reorganized for visibility */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Age", value: data.age },
-              { label: "Weight", value: data.weight },
-              { label: "Gender", value: data.gender },
-              { label: "Division", value: categoryKey },
+              { label: "Age", value: data.age, icon: null },
+              { label: "Weight", value: data.weight, icon: null },
+              { label: "Gender", value: data.gender, icon: null },
             ].map((stat, i) => (
-              <div key={i} className="bg-white border border-slate-200 p-4 rounded-2xl">
+              <div key={i} className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col justify-center">
                 <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{stat.label}</p>
                 <p className="text-lg font-bold text-slate-900 truncate">{stat.value}</p>
               </div>
             ))}
+
+            {/* Dedicated Division Card with more horizontal room */}
+            <div className="bg-white border border-[#4169E1]/20 p-4 rounded-2xl flex flex-col justify-center shadow-sm shadow-blue-500/5">
+              <p className="text-[10px] uppercase font-bold text-[#4169E1] tracking-widest">Division</p>
+              <p className="text-base font-bold text-slate-900 break-words leading-tight mt-1">
+                {String(categoryKey).replace(/-/g, " ")}
+              </p>
+            </div>
           </div>
 
           {/* CONTACT & ADDRESS */}
