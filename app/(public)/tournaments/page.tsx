@@ -26,6 +26,7 @@ type Tournament = {
 export default function TournamentsPage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     fetchTournaments()
@@ -59,6 +60,29 @@ export default function TournamentsPage() {
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Syncing Events</p>
       </div>
     )
+  }
+
+  // Inside TournamentsPage component
+
+  const handleRegisterClick = async (e: React.MouseEvent, tournamentId: string) => {
+    e.preventDefault() // Stop the Link from navigating immediately
+    
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      // User is NOT logged in: Redirect to Google
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { 
+          // After login, send them back to this specific tournament's registration
+          redirectTo: `${window.location.origin}/player/tournaments/${tournamentId}/register` 
+        },
+      })
+      if (error) console.error(error)
+    } else {
+      // User IS logged in: Proceed to registration
+      router.push(`/player/tournaments/${tournamentId}/register`)
+    }
   }
 
   return (
@@ -144,12 +168,13 @@ export default function TournamentsPage() {
 
               {/* Action Area */}
               <div className="flex flex-col gap-3">
-                <Link 
-                  href={`/player/tournaments/${tournament.id}/register`}
-                  className="w-full py-4 bg-[#4169E1] text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] text-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 flex items-center justify-center gap-2"
-                >
-                  Register Now <ChevronRight size={14} />
-                </Link>
+              {/* Replace the existing Register Now Link with this: */}
+              <button 
+                onClick={(e) => handleRegisterClick(e, tournament.id)}
+                className="w-full py-4 bg-[#4169E1] text-white rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] text-center hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 flex items-center justify-center gap-2"
+              >
+                Register Now <ChevronRight size={14} />
+              </button>
                 <Link 
                   href={`/tournaments/${tournament.id}`}
                   className="w-full py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl text-[11px] font-bold uppercase tracking-[0.2em] text-center hover:bg-slate-50 transition-colors"
