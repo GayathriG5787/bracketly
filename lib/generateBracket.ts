@@ -27,7 +27,7 @@ export async function getApprovedPlayers(
 }
 
 /*
-SHUFFLE PLAYERS
+SHUFFLE PLAYERS Fisher-Yates shuffle
 */
 function shuffle(players: any[]) {
   for (let i = players.length - 1; i > 0; i--) {
