@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import { syncUser } from "@/lib/syncUser"
 import { 
   MapPin, 
   Calendar, 
@@ -30,13 +29,6 @@ export default function TournamentsPage() {
 
   useEffect(() => {
     fetchTournaments()
-  }, [])
-
-  useEffect(() => {
-    const run = async () => {
-      await syncUser("player")
-    }
-    run()
   }, [])
 
   const fetchTournaments = async () => {
