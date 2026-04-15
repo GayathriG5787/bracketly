@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Trophy, ShieldCheck, Clock, List } from "lucide-react"
+import { syncUser } from "@/lib/syncUser"
 
 export default function PlayerDashboard() {
   const [player, setPlayer] = useState<any>(null)
@@ -11,41 +12,68 @@ export default function PlayerDashboard() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push("/"); return; }
+useEffect(() => {
+  const loadDashboard = async () => {
+    try {
+      // ✅ 1. Use getSession (more reliable)
+      const { data: { session } } = await supabase.auth.getSession()
 
+      if (!session) {
+        router.push("/")
+        return
+      }
+
+      const user = session.user
+
+      // ✅ 2. Sync user FIRST
+      await syncUser("player")
+
+      // ✅ 3. Fetch player safely
       let { data: playerData } = await supabase
         .from("players")
         .select("*")
         .eq("user_id", user.id)
-        .single()
+        .maybeSingle()
 
+      // ✅ 4. Use UPSERT instead of insert (fixes 409 permanently)
       if (!playerData) {
-        const { data: newPlayer } = await supabase
+        const { data, error } = await supabase
           .from("players")
-          .insert({
+          .upsert({
             user_id: user.id,
             name: user.user_metadata?.full_name || "Player",
             email: user.email,
-          })
-          .select().single()
-        playerData = newPlayer
+          }, { onConflict: "email" }) // 🔥 IMPORTANT
+          .select()
+          .single()
+
+        if (error) throw error
+
+        playerData = data
       }
+
+      // ✅ 5. Hard safety check
+      if (!playerData) throw new Error("Player not found")
+
       setPlayer(playerData)
 
+      // ✅ 6. Fetch registrations
       const { data: regData } = await supabase
         .from("registrations")
-        .select(`id, approved`)
+        .select("id, approved")
         .eq("player_id", playerData.id)
 
       setRegistrations(regData ?? [])
+
+    } catch (err) {
+      console.error("Dashboard error:", err)
+    } finally {
       setLoading(false)
     }
+  }
 
-    loadDashboard()
-  }, [router])
+  loadDashboard()
+}, [router])
 
   if (loading) return <div className="animate-pulse text-slate-400 text-xs font-bold uppercase tracking-widest">Updating Records...</div>
 
