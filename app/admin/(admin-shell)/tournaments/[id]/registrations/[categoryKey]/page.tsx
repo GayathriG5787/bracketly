@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { ChevronLeft, User, MapPin, Award, School, ChevronRight } from "lucide-react"
+import { ChevronLeft, User, MapPin, Award, ChevronRight, CheckCircle, Clock } from "lucide-react"
 
 export default function PlayersListPage() {
   const { id, categoryKey } = useParams()
@@ -18,12 +18,8 @@ export default function PlayersListPage() {
       .from("registrations")
       .select(`
         id,
-        category_key,
         district,
-        belt_rank,
-        academy,
-        school_name,
-        college_name,
+        approved,
         players (
           id,
           name,
@@ -41,7 +37,6 @@ export default function PlayersListPage() {
     fetchPlayers()
   }, [])
 
-  // Parse categoryKey for a cleaner title (e.g., Male-Senior-Under 54kg)
   const displayCategory = String(categoryKey).replace(/-/g, " • ")
 
   return (
@@ -90,45 +85,44 @@ export default function PlayersListPage() {
                   <User size={24} />
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4 md:gap-12">
-                  {/* Name & Contact */}
-                  <div className="min-w-[180px]">
-                    <h3 className="font-bold text-slate-900 group-hover:text-[#4169E1] transition-colors">
-                      {reg.players?.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 truncate">{reg.players?.email}</p>
-                  </div>
-
-                  {/* Belt & District */}
-                  <div className="flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 text-sm text-slate-600 font-medium">
-                      <div className="w-2 h-2 rounded-full bg-slate-300" />
-                      {reg.belt_rank} Belt
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mt-1">
-                      <MapPin size={12} />
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="font-bold text-slate-900 group-hover:text-[#4169E1] transition-colors">
+                    {reg.players?.name}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-slate-400">
+                      {reg.players?.email}
+                    </p>
+                    <span className="text-slate-300">•</span>
+                    <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                      <MapPin size={12} className="text-slate-400" />
                       {reg.district}
-                    </div>
-                  </div>
-
-                  {/* Affiliation */}
-                  <div className="hidden md:flex flex-col justify-center">
-                    <div className="flex items-center gap-1.5 text-sm text-slate-600">
-                      <School size={14} className="text-slate-400" />
-                      <span className="truncate max-w-[150px]">
-                        {reg.academy || reg.school_name || reg.college_name || "Independent"}
-                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="hidden sm:block text-[10px] font-bold uppercase tracking-tighter text-slate-300 group-hover:text-[#4169E1] transition-colors">
-                  View Profile
-                </span>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-white group-hover:bg-[#4169E1] transition-all">
-                  <ChevronRight size={20} />
+              {/* Status & Action */}
+              <div className="flex items-center gap-4">
+                <div>
+                  {reg.approved ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      <CheckCircle size={12} /> Approved
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-100">
+                      <Clock size={12} /> Pending
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="hidden md:block text-[10px] font-bold uppercase tracking-widest text-slate-300 group-hover:text-[#4169E1] transition-colors">
+                    Details
+                  </span>
+                  <div className="text-slate-300 group-hover:text-[#4169E1] transition-all">
+                    <ChevronRight size={18} />
+                  </div>
                 </div>
               </div>
             </div>
