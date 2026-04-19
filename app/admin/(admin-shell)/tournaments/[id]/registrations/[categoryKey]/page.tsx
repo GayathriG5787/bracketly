@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { ChevronLeft, User, MapPin, Award, ChevronRight, CheckCircle, Clock } from "lucide-react"
+import { ChevronLeft, User, MapPin, Award, ChevronRight, CheckCircle, Clock, Filter } from "lucide-react"
 
 export default function PlayersListPage() {
   const { id, categoryKey } = useParams()
@@ -11,6 +11,7 @@ export default function PlayersListPage() {
 
   const [players, setPlayers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<"all" | "approved" | "pending">("all")
 
   const fetchPlayers = async () => {
     setLoading(true)
@@ -37,6 +38,12 @@ export default function PlayersListPage() {
     fetchPlayers()
   }, [])
 
+  const filteredPlayers = players.filter((reg) => {
+    if (filter === "approved") return reg.approved === true
+    if (filter === "pending") return reg.approved === false
+    return true
+  })
+
   const displayCategory = String(categoryKey).replace(/-/g, " • ")
 
   return (
@@ -50,28 +57,58 @@ export default function PlayersListPage() {
         Back to Divisions
       </button>
 
-      <div className="mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#4169E1] text-xs font-bold uppercase tracking-wider mb-3">
-          <Award size={14} />
-          {displayCategory}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#4169E1] text-xs font-bold uppercase tracking-wider mb-3">
+            <Award size={14} />
+            {displayCategory}
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Registered Athletes</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            {filteredPlayers.length} {filteredPlayers.length === 1 ? 'competitor' : 'competitors'} showing.
+          </p>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Registered Athletes</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          {players.length} {players.length === 1 ? 'competitor' : 'competitors'} found for this weight class.
-        </p>
+
+        {/* --- FILTER BUTTONS --- */}
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              filter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setFilter("approved")}
+            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              filter === "approved" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Approved
+          </button>
+          <button
+            onClick={() => setFilter("pending")}
+            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              filter === "pending" ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Pending
+          </button>
+        </div>
       </div>
 
       {/* --- PLAYERS LIST --- */}
       <div className="grid gap-4">
         {loading ? (
           <div className="py-20 text-center text-slate-400 animate-pulse">Loading roster...</div>
-        ) : players.length === 0 ? (
+        ) : filteredPlayers.length === 0 ? (
           <div className="bg-white border border-dashed border-slate-300 rounded-[1.5rem] py-20 text-center">
             <User size={48} className="mx-auto text-slate-200 mb-4" />
-            <p className="text-slate-500 font-medium">No players registered in this category yet.</p>
+            <p className="text-slate-500 font-medium">No players found matching this filter.</p>
           </div>
         ) : (
-          players.map((reg: any) => (
+          filteredPlayers.map((reg: any) => (
             <div
               key={reg.id}
               onClick={() =>
@@ -92,15 +129,15 @@ export default function PlayersListPage() {
                 </div>
               </div>
 
-              {/* CENTER: District (Hidden on mobile, centered on desktop) */}
+              {/* CENTER: District (Visually Clear Pill) */}
               <div className="hidden md:flex justify-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-slate-600">
-                  <MapPin size={14} className="text-slate-400" />
-                  <span className="text-xs font-semibold tracking-wide uppercase">{reg.district}</span>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50/50 border border-blue-100/50 text-[#4169E1]">
+                  <MapPin size={13} />
+                  <span className="text-[11px] font-bold tracking-wide uppercase">{reg.district}</span>
                 </div>
               </div>
 
-              {/* RIGHT: Status & Chevron */}
+              {/* RIGHT: Status & Action */}
               <div className="flex items-center justify-end gap-6">
                 <div>
                   {reg.approved ? (
