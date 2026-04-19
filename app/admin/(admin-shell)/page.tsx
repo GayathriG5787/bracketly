@@ -252,7 +252,9 @@ import {
   Loader2, 
   PieChart, 
   Activity,
-  Filter
+  Filter,
+  CheckCircle2, // New icon
+  Clock // New icon
 } from "lucide-react"
 import {
   XAxis, 
@@ -283,6 +285,8 @@ interface DashboardStats {
   tournaments: number;
   players: number;
   registrations: number;
+  approvedPlayers: number; // Added
+  pendingPlayers: number;  // Added
 }
 
 interface TournamentOption {
@@ -295,7 +299,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Green for Approved, Amber for Pending
 const COLORS = ['#10b981', '#f59e0b', '#6366f1', '#ef4444'];
 
 export default function AdminDashboard() {
@@ -304,6 +307,8 @@ export default function AdminDashboard() {
     tournaments: 0,
     players: 0,
     registrations: 0,
+    approvedPlayers: 0,
+    pendingPlayers: 0,
   })
   
   const [charts, setCharts] = useState<{
@@ -326,7 +331,6 @@ export default function AdminDashboard() {
       return acc
     }, {})
     
-    // Simple sort for weekdays
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     return days
       .filter(d => groups[d])
@@ -335,7 +339,6 @@ export default function AdminDashboard() {
 
   const processStatus = (data: any[]): StatusDistData[] => {
     const groups = data.reduce((acc: any, curr) => {
-      // Map boolean 'approved' to readable labels
       const label = curr.approved === true ? 'Approved' : 'Pending';
       acc[label] = (acc[label] || 0) + 1
       return acc
@@ -347,18 +350,23 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchMetadata() {
       try {
-        const [tList, tCount, pCount, rCount] = await Promise.all([
+        const [tList, tCount, pCount, rCount, approvedCount, pendingCount] = await Promise.all([
           supabase.from('tournaments').select('id, name'),
           supabase.from('tournaments').select('*', { count: 'exact', head: true }),
           supabase.from('players').select('*', { count: 'exact', head: true }),
           supabase.from('registrations').select('*', { count: 'exact', head: true }),
+          // Fetching specific counts for the new cards
+          supabase.from('registrations').select('*', { count: 'exact', head: true }).eq('approved', true),
+          supabase.from('registrations').select('*', { count: 'exact', head: true }).eq('approved', false),
         ])
 
         if (tList.data) setTournaments(tList.data)
         setStats({
           tournaments: tCount.count || 0,
           players: pCount.count || 0,
-          registrations: rCount.count || 0
+          registrations: rCount.count || 0,
+          approvedPlayers: approvedCount.count || 0,
+          pendingPlayers: pendingCount.count || 0,
         })
       } catch (error) {
         console.error("Metadata fetch error:", error)
@@ -372,8 +380,6 @@ export default function AdminDashboard() {
     async function fetchChartData() {
       try {
         setLoading(true)
-        
-        // Fetching 'approved' boolean column instead of 'status' string
         let query = supabase
           .from('registrations')
           .select('created_at, approved, tournament_id')
@@ -412,7 +418,6 @@ export default function AdminDashboard() {
           <p className="text-slate-500 text-sm mt-1">Reviewing platform-wide enrollment and approvals.</p>
         </div>
 
-        {/* --- TOURNAMENT SELECTOR --- */}
         <div className="flex items-center gap-3 bg-white border border-slate-200 p-2 rounded-xl shadow-sm">
           <Filter size={18} className="text-slate-400 ml-2" />
           <select 
@@ -428,20 +433,22 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* --- STAT CARDS --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      {/* --- UPDATED STAT CARDS --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {[
           { label: "Total Players", val: stats.players, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50" },
-          { label: "Active Tournaments", val: stats.tournaments, icon: Trophy, color: "text-amber-600", bg: "bg-amber-50" },
-          { label: "Total Enrollments", val: stats.registrations, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Tournaments", val: stats.tournaments, icon: Trophy, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: "Enrollments", val: stats.registrations, icon: TrendingUp, color: "text-slate-600", bg: "bg-slate-50" },
+          { label: "Approved", val: stats.approvedPlayers, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { label: "Pending", val: stats.pendingPlayers, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
         ].map((s, i) => (
-          <div key={i} className="bg-white p-6 rounded-[1.5rem] border border-slate-200 flex items-center gap-5 shadow-sm hover:shadow-md transition-shadow">
-            <div className={`p-4 rounded-2xl ${s.bg} ${s.color}`}>
-              <s.icon size={24} />
+          <div key={i} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className={`p-3 rounded-xl ${s.bg} ${s.color}`}>
+              <s.icon size={20} />
             </div>
             <div>
-              <p className="text-sm text-slate-500 font-medium">{s.label}</p>
-              <h2 className="text-2xl font-bold text-slate-900">{s.val.toLocaleString()}</h2>
+              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">{s.label}</p>
+              <h2 className="text-xl font-bold text-slate-900">{s.val.toLocaleString()}</h2>
             </div>
           </div>
         ))}
