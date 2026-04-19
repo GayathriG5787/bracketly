@@ -77,33 +77,31 @@ export default function PlayersListPage() {
               onClick={() =>
                 router.push(`/admin/tournaments/${id}/registrations/${categoryKey}/${reg.players.id}`)
               }
-              className="group bg-white border border-slate-200 p-5 rounded-[1.5rem] hover:border-[#4169E1] hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer flex items-center justify-between"
+              className="group bg-white border border-slate-200 p-5 rounded-[1.5rem] hover:border-[#4169E1] hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer grid grid-cols-2 md:grid-cols-3 items-center"
             >
+              {/* LEFT: Name & Avatar */}
               <div className="flex items-center gap-5">
-                {/* Avatar Placeholder */}
-                <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-blue-50 group-hover:text-[#4169E1] transition-colors">
+                <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-blue-50 group-hover:text-[#4169E1] transition-colors shrink-0">
                   <User size={24} />
                 </div>
-
-                <div className="flex flex-col gap-0.5">
-                  <h3 className="font-bold text-slate-900 group-hover:text-[#4169E1] transition-colors">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 group-hover:text-[#4169E1] transition-colors truncate">
                     {reg.players?.name}
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-slate-400">
-                      {reg.players?.email}
-                    </p>
-                    <span className="text-slate-300">•</span>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-                      <MapPin size={12} className="text-slate-400" />
-                      {reg.district}
-                    </div>
-                  </div>
+                  <p className="text-xs text-slate-400 truncate">{reg.players?.email}</p>
                 </div>
               </div>
 
-              {/* Status & Action */}
-              <div className="flex items-center gap-4">
+              {/* CENTER: District (Hidden on mobile, centered on desktop) */}
+              <div className="hidden md:flex justify-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-slate-600">
+                  <MapPin size={14} className="text-slate-400" />
+                  <span className="text-xs font-semibold tracking-wide uppercase">{reg.district}</span>
+                </div>
+              </div>
+
+              {/* RIGHT: Status & Chevron */}
+              <div className="flex items-center justify-end gap-6">
                 <div>
                   {reg.approved ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">
@@ -117,7 +115,7 @@ export default function PlayersListPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="hidden md:block text-[10px] font-bold uppercase tracking-widest text-slate-300 group-hover:text-[#4169E1] transition-colors">
+                  <span className="hidden lg:block text-[10px] font-bold uppercase tracking-widest text-slate-300 group-hover:text-[#4169E1] transition-colors">
                     Details
                   </span>
                   <div className="text-slate-300 group-hover:text-[#4169E1] transition-all">
