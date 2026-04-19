@@ -55,7 +55,6 @@ export default function RegisterPlayer() {
   const [nationalParticipations, setNationalParticipations] = useState("")
   const [participations, setParticipations] = useState<any[]>([])
 
-  // SYNC ARRAY LENGTH WITH COUNTS (Crucial to prevent duplicate admin views)
   useEffect(() => {
     const totalNeeded = Number(districtParticipations || 0) + 
                         Number(stateParticipations || 0) + 
@@ -126,9 +125,36 @@ export default function RegisterPlayer() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (loading) return
-    setLoading(true)
 
+    // --- MANDATORY VALIDATION LOGIC ---
+    if (
+      !name || !phone || !age || !weight || !gender || !beltRank || 
+      !address1 || !address2 || !city || !district || !stateName || !pincode ||
+      !birthCert || !aadhar || !beltCert || !studentType
+    ) {
+      alert("Please fill all mandatory fields and upload required documents (Birth Certificate, Aadhar, and Belt Certificate).")
+      return
+    }
+
+    if (studentType === "school" && (!schoolName || !schoolProof)) {
+      alert("As a school student, School Name and School Bonafide are mandatory.")
+      return
+    }
+
+    if (studentType === "college" && (!collegeName || !collegeProof)) {
+      alert("As a college student, College Name and College Proof are mandatory.")
+      return
+    }
+
+    // Participation file validation
     const totalP = Number(districtParticipations || 0) + Number(stateParticipations || 0) + Number(nationalParticipations || 0)
+    const uploadedParticipations = participations.filter(p => p.file).length
+    if (totalP > 0 && uploadedParticipations !== totalP) {
+        alert("Please upload certificates for all specified participation counts.")
+        return
+    }
+
+    setLoading(true)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -150,7 +176,6 @@ export default function RegisterPlayer() {
         collegeProof ? uploadFile(collegeProof, `${baseFolder}/college`) : null,
       ])
 
-      // 1. Registration
       await supabase.from("registrations").insert({
         player_id: player.id,
         tournament_id: tournamentId,
@@ -164,7 +189,6 @@ export default function RegisterPlayer() {
         school_bonafide_url: schoolUrl, college_proof_url: collegeUrl, approved: false
       })
 
-      // 2. Achievements
       if (achievements.length > 0) {
         const achievementRows = await Promise.all(achievements.map(async (a) => ({
             player_id: player.id,
@@ -176,7 +200,6 @@ export default function RegisterPlayer() {
         await supabase.from("player_achievements").insert(achievementRows)
       }
 
-      // 3. Participations (CLEAN SLICE: Uploads exactly totalP rows)
       if (totalP > 0) {
         const finalParticipations = participations.slice(0, totalP);
         const participationRows = await Promise.all(finalParticipations.map(async (p) => {
@@ -214,52 +237,49 @@ export default function RegisterPlayer() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Personal Info */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><User size={20} /></div>
             <h2 className="text-xl font-bold text-slate-900">Personal Information</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputField label="Full Name" value={name} onChange={setName} />
+            <InputField label="Full Name" value={name} onChange={setName} required />
             <InputField label="Email Address" value={userEmail} disabled />
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
               <div className="flex gap-2">
-                <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" value={phone} disabled={!isEditingPhone && !!player?.phone} onChange={(e) => setPhone(e.target.value)} />
+                <input required className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" value={phone} disabled={!isEditingPhone && !!player?.phone} onChange={(e) => setPhone(e.target.value)} />
                 {player?.phone && !isEditingPhone && (
                   <button type="button" onClick={() => setIsEditingPhone(true)} className="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl">Edit</button>
                 )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Age" type="number" value={age} onChange={setAge} />
-              <InputField label="Weight (kg)" type="number" value={weight} onChange={setWeight} />
+              <InputField label="Age" type="number" value={age} onChange={setAge} required />
+              <InputField label="Weight (kg)" type="number" value={weight} onChange={setWeight} required />
             </div>
-            <SelectField label="Gender" value={gender} onChange={setGender} options={["Male", "Female"]} />
-            <SelectField label="Belt Rank" value={beltRank} onChange={setBeltRank} options={beltOptions.map(b => b.value)} />
+            <SelectField label="Gender" value={gender} onChange={setGender} options={["Male", "Female"]} required />
+            <SelectField label="Belt Rank" value={beltRank} onChange={setBeltRank} options={beltOptions.map(b => b.value)} required />
           </div>
         </div>
 
-        {/* RESTORED ADDRESS SECTION */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><MapPin size={20} /></div>
             <h2 className="text-xl font-bold text-slate-900">Address Details</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2"><InputField label="Address Line 1" value={address1} onChange={setAddress1} /></div>
-            <InputField label="Address Line 2" value={address2} onChange={setAddress2} />
-            <InputField label="City" value={city} onChange={setCity} />
-            <InputField label="District" value={district} onChange={setDistrict} />
+            <div className="md:col-span-2"><InputField label="Address Line 1" value={address1} onChange={setAddress1} required /></div>
+            <InputField label="Address Line 2" value={address2} onChange={setAddress2} required />
+            <InputField label="City" value={city} onChange={setCity} required />
+            <InputField label="District" value={district} onChange={setDistrict} required />
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="State" value={stateName} onChange={setStateName} />
-              <InputField label="Pincode" value={pincode} onChange={setPincode} />
+              <InputField label="State" value={stateName} onChange={setStateName} required />
+              <InputField label="Pincode" value={pincode} onChange={setPincode} required />
             </div>
           </div>
         </div>
 
-        {/* Documents */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-amber-50 rounded-lg text-amber-600"><FileText size={20} /></div>
@@ -269,17 +289,17 @@ export default function RegisterPlayer() {
             <FileUploader label="Birth Certificate" file={birthCert} onChange={setBirthCert} />
             <FileUploader label="Aadhar Card" file={aadhar} onChange={setAadhar} />
             <FileUploader label="Belt Certificate" file={beltCert} onChange={setBeltCert} />
-            <SelectField label="Student Status" value={studentType} onChange={setStudentType} options={["school", "college", "none"]} />
+            <SelectField label="Student Status" value={studentType} onChange={setStudentType} options={["school", "college", "none"]} required />
             
             {studentType === "school" && (
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                <InputField label="School Name" value={schoolName} onChange={setSchoolName} />
+                <InputField label="School Name" value={schoolName} onChange={setSchoolName} required />
                 <FileUploader label="School Bonafide" file={schoolProof} onChange={setSchoolProof} />
               </div>
             )}
             {studentType === "college" && (
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                <InputField label="College Name" value={collegeName} onChange={setCollegeName} />
+                <InputField label="College Name" value={collegeName} onChange={setCollegeName} required />
                 <FileUploader label="College Proof" file={collegeProof} onChange={setCollegeProof} />
               </div>
             )}
@@ -289,7 +309,6 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
-        {/* Participations */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Award size={20} /></div>
@@ -321,7 +340,6 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
-        {/* Achievements Section */}
         <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl">
            <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-white/10 rounded-lg text-white"><Trophy size={20} /></div>
