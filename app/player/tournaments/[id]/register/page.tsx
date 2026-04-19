@@ -126,7 +126,6 @@ export default function RegisterPlayer() {
     e.preventDefault()
     if (loading) return
 
-    // --- MANDATORY VALIDATION LOGIC ---
     if (
       !name || !phone || !age || !weight || !gender || !beltRank || 
       !address1 || !address2 || !city || !district || !stateName || !pincode ||
@@ -146,7 +145,6 @@ export default function RegisterPlayer() {
       return
     }
 
-    // Participation file validation
     const totalP = Number(districtParticipations || 0) + Number(stateParticipations || 0) + Number(nationalParticipations || 0)
     const uploadedParticipations = participations.filter(p => p.file).length
     if (totalP > 0 && uploadedParticipations !== totalP) {
@@ -255,14 +253,16 @@ export default function RegisterPlayer() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Age" type="number" value={age} onChange={setAge} required />
-              <InputField label="Weight (kg)" type="number" value={weight} onChange={setWeight} required />
+              <InputField label="Age" type="number" min="0" value={age} onChange={setAge} required />
+              <InputField label="Weight (kg)" type="number" min="0" value={weight} onChange={setWeight} required />
             </div>
             <SelectField label="Gender" value={gender} onChange={setGender} options={["Male", "Female"]} required />
             <SelectField label="Belt Rank" value={beltRank} onChange={setBeltRank} options={beltOptions.map(b => b.value)} required />
           </div>
         </div>
 
+        {/* ... (Address and Documents sections remain unchanged) ... */}
+        
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><MapPin size={20} /></div>
@@ -315,10 +315,11 @@ export default function RegisterPlayer() {
             <h2 className="text-xl font-bold text-slate-900">Past Participations</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <InputField label="District Count" type="number" value={districtParticipations} onChange={setDistrictParticipations} />
-            <InputField label="State Count" type="number" value={stateParticipations} onChange={setStateParticipations} />
-            <InputField label="National Count" type="number" value={nationalParticipations} onChange={setNationalParticipations} />
+            <InputField label="District Count" type="number" min="0" value={districtParticipations} onChange={setDistrictParticipations} />
+            <InputField label="State Count" type="number" min="0" value={stateParticipations} onChange={setStateParticipations} />
+            <InputField label="National Count" type="number" min="0" value={nationalParticipations} onChange={setNationalParticipations} />
           </div>
+          {/* ... (Participation certificate rendering remains unchanged) ... */}
           <div className="space-y-4">
             {[...Array(Number(districtParticipations || 0))].map((_, i) => (
               <FileUploader key={`dist-${i}`} label={`District Certificate ${i + 1}`} file={participations[i]?.file} onChange={(f: File) => {
@@ -348,7 +349,7 @@ export default function RegisterPlayer() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <SelectField label="Level" value={level} onChange={setLevel} options={["district", "state", "national"]} dark />
             <SelectField label="Medal" value={medalType} onChange={setMedalType} options={["gold", "silver", "bronze"]} dark />
-            <InputField label="Year" type="number" value={year} onChange={setYear} placeholder="YYYY" dark />
+            <InputField label="Year" type="number" min="1900" value={year} onChange={setYear} placeholder="YYYY" dark />
             <div className="space-y-1">
                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Certificate</label>
                <input type="file" className="hidden" id="ach-file" onChange={e => setAchievementFile(e.target.files?.[0] || null)} />
@@ -377,11 +378,30 @@ export default function RegisterPlayer() {
   )
 }
 
-function InputField({ label, dark, ...props }: any) {
+/**
+ * Updated InputField to block negative inputs
+ */
+function InputField({ label, dark, type, ...props }: any) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    
+    // If it's a number field, prevent negative values
+    if (type === "number" && val !== "" && Number(val) < 0) {
+      return; 
+    }
+    
+    props.onChange(val);
+  };
+
   return (
     <div className="space-y-1">
       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-      <input className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-[#4169E1] outline-none transition-all ${dark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} {...props} onChange={e => props.onChange(e.target.value)} />
+      <input 
+        type={type}
+        className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-[#4169E1] outline-none transition-all ${dark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} 
+        {...props} 
+        onChange={handleChange} 
+      />
     </div>
   )
 }
