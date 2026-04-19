@@ -65,7 +65,7 @@ export default function AdminTournamentsPage() {
                   </span>
                   <span className="text-slate-300">|</span>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    <Calendar size={12} /> {t.date || "Date TBD"}
+                    <Calendar size={12} /> {t.tournament_date || "Date TBD"}
                   </span>
                 </div>
                 
