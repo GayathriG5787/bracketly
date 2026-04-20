@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
-import { Trophy, CheckCircle2, Info, Loader2 } from "lucide-react"
+import { Trophy, CheckCircle2, Loader2 } from "lucide-react"
 
 export default function BracketViewPage() {
   const params = useParams()
@@ -90,7 +90,8 @@ export default function BracketViewPage() {
             const slotHeight = Math.pow(2, rNum - 1) * 130 
 
             return (
-              <div key={round} className="flex flex-col w-64">
+              /* Increased width from w-64 to w-80 to provide room for longer names */
+              <div key={round} className="flex flex-col w-80">
                 <div className="text-center mb-10 h-12">
                   <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Stage {rNum}</span>
                   <h3 className="text-sm font-bold text-slate-900 mt-1 uppercase tracking-wider">
@@ -110,15 +111,13 @@ export default function BracketViewPage() {
                         className="relative flex items-center justify-center w-full"
                         style={{ height: `${slotHeight}px` }}
                       >
-                        {/* EXIT CONNECTORS (Towards Next Round) */}
+                        {/* EXIT CONNECTORS */}
                         {rNum < finalRoundNum && (
                           <>
-                            {/* Horizontal part */}
                             <div 
                               className="absolute bg-slate-200" 
                               style={{ right: 0, top: '50%', width: `${CONNECTOR_WIDTH}px`, height: '2px' }} 
                             />
-                            {/* Vertical part (L-bridge) */}
                             <div 
                               className="absolute bg-slate-200" 
                               style={{ 
@@ -132,7 +131,7 @@ export default function BracketViewPage() {
                           </>
                         )}
 
-                        {/* ENTRY CONNECTORS (From Previous Round) */}
+                        {/* ENTRY CONNECTORS */}
                         {rNum > 1 && (
                           <div 
                             className="absolute bg-slate-200" 
@@ -140,14 +139,18 @@ export default function BracketViewPage() {
                           />
                         )}
 
-                        <div className="w-52 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm relative z-10 transition-all hover:border-[#4169E1]/30">
+                        {/* Match Container: Increased from w-52 to w-64 */}
+                        <div className="w-64 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm relative z-10 transition-all hover:border-[#4169E1]/30">
                           <button
                             disabled={!canSelect}
                             onClick={() => handleSelectWinner(match, match.player1_id)}
                             className={`w-full p-3 text-left flex items-center justify-between border-b border-slate-50 ${isP1Winner ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'}`}
                           >
-                            <span className="text-[11px] truncate max-w-[140px]">{match.player1?.name || "TBD"}</span>
-                            {isP1Winner && <CheckCircle2 size={12} className="text-emerald-500" />}
+                            {/* Removed truncate and max-w; added whitespace-nowrap */}
+                            <span className="text-[11px] whitespace-nowrap pr-2">
+                              {match.player1?.name || "TBD"}
+                            </span>
+                            {isP1Winner && <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />}
                           </button>
 
                           <button
@@ -155,8 +158,10 @@ export default function BracketViewPage() {
                             onClick={() => handleSelectWinner(match, match.player2_id)}
                             className={`w-full p-3 text-left flex items-center justify-between ${isP2Winner ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'}`}
                           >
-                            <span className="text-[11px] truncate max-w-[140px]">{match.player2?.name || "TBD"}</span>
-                            {isP2Winner && <CheckCircle2 size={12} className="text-emerald-500" />}
+                            <span className="text-[11px] whitespace-nowrap pr-2">
+                              {match.player2?.name || "TBD"}
+                            </span>
+                            {isP2Winner && <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />}
                           </button>
                         </div>
                       </div>
@@ -167,14 +172,13 @@ export default function BracketViewPage() {
             )
           })}
 
-          {/* --- CHAMPION PODIUM (Moved Closer) --- */}
-          <div className="flex flex-col w-48 h-full">
-            <div className="h-12 mb-10" /> {/* Spacer to align with headers */}
+          {/* --- CHAMPION PODIUM --- */}
+          <div className="flex flex-col w-56 h-full">
+            <div className="h-12 mb-10" />
             <div 
               className="relative flex items-center" 
               style={{ height: `${Math.pow(2, finalRoundNum - 1) * 130}px` }}
             >
-              {/* Connector line from Finals to Podium */}
               <div className="w-10 h-0.5 bg-slate-200" />
               
               <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 flex flex-col items-center text-center shadow-inner w-full">
