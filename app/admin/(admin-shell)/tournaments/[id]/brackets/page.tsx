@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { generateBracket } from "@/lib/generateBracket"
 import { useRouter } from "next/navigation"
-import { ChevronDown, ChevronRight, GitBranch, Loader2, CheckCircle2, Users } from "lucide-react"
+import { ChevronDown, ChevronRight, GitBranch, Loader2, CheckCircle2, Users, Eye } from "lucide-react"
 
 export default function BracketsPage({ params }: any) {
   const { id: tournamentId } = use(params) as { id: string }
@@ -156,6 +156,20 @@ export default function BracketsPage({ params }: any) {
                               </div>
 
                               <div className="flex items-center gap-2">
+                                {/* VIEW PLAYERS BUTTON */}
+                                {players.length > 0 && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      router.push(`/admin/tournaments/${tournamentId}/registrations/${categoryKey}`)
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-sm"
+                                  >
+                                    <Eye size={14} />
+                                    Players
+                                  </button>
+                                )}
+
                                 {canGenerate && (
                                   <button
                                     onClick={(e) => {
