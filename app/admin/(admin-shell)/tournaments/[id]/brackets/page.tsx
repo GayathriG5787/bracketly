@@ -4,13 +4,12 @@ import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { generateBracket } from "@/lib/generateBracket"
 import { useRouter } from "next/navigation"
-import { ChevronDown, ChevronRight, GitBranch, Loader2, CheckCircle2, Users, Eye } from "lucide-react"
+import { ChevronDown, GitBranch, Loader2, CheckCircle2, Eye } from "lucide-react"
 
 export default function BracketsPage({ params }: any) {
   const { id: tournamentId } = use(params) as { id: string }
   const [registrations, setRegistrations] = useState<any[]>([])
   const [openAge, setOpenAge] = useState<string | null>(null)
-  const [openWeight, setOpenWeight] = useState<string | null>(null)
   const [loadingCategory, setLoadingCategory] = useState<string | null>(null)
   const [generatedCategories, setGeneratedCategories] = useState<Set<string>>(new Set())
 
@@ -135,19 +134,14 @@ export default function BracketsPage({ params }: any) {
                     <div className="p-3 space-y-2 bg-white border-t border-slate-100">
                       {(Array.isArray(WEIGHT_ORDER[age]) ? WEIGHT_ORDER[age] : WEIGHT_ORDER[age][gender]).map((weight: string) => {
                         const players = ageGroups?.[weight] || []
-                        const weightKey = `${ageKey}-${weight}`
                         const categoryKey = players[0]?.category_key
-                        const isWeightOpen = openWeight === weightKey
                         const isLoading = loadingCategory === categoryKey
                         const isGenerated = generatedCategories.has(categoryKey)
                         const canGenerate = players.length >= 2
 
                         return (
-                          <div key={weightKey} className={`rounded-xl border border-slate-100 ${players.length === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
-                            <div 
-                              onClick={() => setOpenWeight(isWeightOpen ? null : weightKey)}
-                              className="cursor-pointer flex items-center justify-between p-3 hover:bg-slate-50 transition-colors rounded-xl"
-                            >
+                          <div key={`${ageKey}-${weight}`} className={`rounded-xl border border-slate-100 transition-opacity ${players.length === 0 ? 'opacity-40 pointer-events-none' : ''}`}>
+                            <div className="flex items-center justify-between p-3 hover:bg-slate-50 transition-colors rounded-xl">
                               <div className="flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isGenerated ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-[#4169E1]'}`}>
                                   {players.length}
@@ -159,9 +153,7 @@ export default function BracketsPage({ params }: any) {
                                 {/* VIEW PLAYERS BUTTON */}
                                 {players.length > 0 && (
                                   <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      // Added the ?filter=approved query parameter to the route
+                                    onClick={() => {
                                       router.push(`/admin/tournaments/${tournamentId}/registrations/${categoryKey}?filter=approved`)
                                     }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-sm"
@@ -173,10 +165,7 @@ export default function BracketsPage({ params }: any) {
 
                                 {canGenerate && (
                                   <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      handleGenerate(players)
-                                    }}
+                                    onClick={() => handleGenerate(players)}
                                     disabled={isLoading}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
                                       isLoading ? "bg-slate-100 text-slate-400 cursor-not-allowed" :
@@ -187,21 +176,8 @@ export default function BracketsPage({ params }: any) {
                                     {isLoading ? "Wait..." : isGenerated ? "View" : "Generate"}
                                   </button>
                                 )}
-                                <ChevronRight size={16} className={`text-slate-300 transition-transform ${isWeightOpen ? 'rotate-90' : ''}`} />
                               </div>
                             </div>
-
-                            {isWeightOpen && players.length > 0 && (
-                              <div className="px-3 pb-3 pt-1 space-y-1">
-                                <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-2 ml-1">Roster</div>
-                                {players.map((p: any) => (
-                                  <div key={p.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100/50 text-sm text-slate-600">
-                                    <Users size={12} className="text-slate-400" />
-                                    {p.name}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         )
                       })}
