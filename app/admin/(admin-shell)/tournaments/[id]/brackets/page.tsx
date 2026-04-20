@@ -161,7 +161,8 @@ export default function BracketsPage({ params }: any) {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      router.push(`/admin/tournaments/${tournamentId}/registrations/${categoryKey}`)
+                                      // Added the ?filter=approved query parameter to the route
+                                      router.push(`/admin/tournaments/${tournamentId}/registrations/${categoryKey}?filter=approved`)
                                     }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-sm"
                                   >

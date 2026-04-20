@@ -1,17 +1,34 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import { ChevronLeft, User, MapPin, Award, ChevronRight, CheckCircle, Clock, Filter } from "lucide-react"
+import { ChevronLeft, User, MapPin, Award, ChevronRight, CheckCircle, Clock } from "lucide-react"
 
 export default function PlayersListPage() {
   const { id, categoryKey } = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
+  // --- STATE ---
   const [players, setPlayers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<"all" | "approved" | "pending">("all")
+
+  // --- URL PERSISTENCE LOGIC ---
+  // Read "filter" from URL, default to "all"
+  const currentFilter = (searchParams.get("filter") as "all" | "approved" | "pending") || "all"
+
+  // Update URL when a filter is clicked
+  const handleFilterChange = (newFilter: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (newFilter === "all") {
+      params.delete("filter")
+    } else {
+      params.set("filter", newFilter)
+    }
+    // replace() updates the URL without adding a new entry to the browser history stack
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }
 
   const fetchPlayers = async () => {
     setLoading(true)
@@ -36,11 +53,11 @@ export default function PlayersListPage() {
 
   useEffect(() => {
     fetchPlayers()
-  }, [])
+  }, [id, categoryKey])
 
   const filteredPlayers = players.filter((reg) => {
-    if (filter === "approved") return reg.approved === true
-    if (filter === "pending") return reg.approved === false
+    if (currentFilter === "approved") return reg.approved === true
+    if (currentFilter === "pending") return reg.approved === false
     return true
   })
 
@@ -69,28 +86,28 @@ export default function PlayersListPage() {
           </p>
         </div>
 
-        {/* --- FILTER BUTTONS --- */}
+        {/* --- FILTER BUTTONS (Now synced with URL) --- */}
         <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
-            onClick={() => setFilter("all")}
+            onClick={() => handleFilterChange("all")}
             className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              filter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              currentFilter === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             All
           </button>
           <button
-            onClick={() => setFilter("approved")}
+            onClick={() => handleFilterChange("approved")}
             className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              filter === "approved" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              currentFilter === "approved" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             Approved
           </button>
           <button
-            onClick={() => setFilter("pending")}
+            onClick={() => handleFilterChange("pending")}
             className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              filter === "pending" ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              currentFilter === "pending" ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             Pending
@@ -116,7 +133,6 @@ export default function PlayersListPage() {
               }
               className="group bg-white border border-slate-200 p-5 rounded-[1.5rem] hover:border-[#4169E1] hover:shadow-xl hover:shadow-blue-500/5 transition-all cursor-pointer grid grid-cols-2 md:grid-cols-3 items-center"
             >
-              {/* LEFT: Name & Avatar */}
               <div className="flex items-center gap-5">
                 <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-blue-50 group-hover:text-[#4169E1] transition-colors shrink-0">
                   <User size={24} />
@@ -129,7 +145,6 @@ export default function PlayersListPage() {
                 </div>
               </div>
 
-              {/* CENTER: District (Visually Clear Pill) */}
               <div className="hidden md:flex justify-center">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50/50 border border-blue-100/50 text-[#4169E1]">
                   <MapPin size={13} />
@@ -137,7 +152,6 @@ export default function PlayersListPage() {
                 </div>
               </div>
 
-              {/* RIGHT: Status & Action */}
               <div className="flex items-center justify-end gap-6">
                 <div>
                   {reg.approved ? (
