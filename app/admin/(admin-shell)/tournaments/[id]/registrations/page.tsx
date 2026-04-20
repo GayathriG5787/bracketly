@@ -89,7 +89,6 @@ export default function RegistrationsPage({ params }: any) {
               const ageKey = `${gender}-${age}`
               const isOpen = openAge === ageKey
               
-              // Count total players in this age category
               const totalInAge = Object.values(ageGroups).reduce((acc: number, curr: any) => acc + curr.length, 0)
 
               return (
@@ -113,6 +112,9 @@ export default function RegistrationsPage({ params }: any) {
                       ).map((weight: string) => {
                         const players = ageGroups?.[weight] || []
                         const hasPlayers = players.length > 0
+                        
+                        const approvedCount = players.filter((p: any) => p.approved === true).length
+                        const pendingCount = players.filter((p: any) => p.approved !== true).length
 
                         return (
                           <div
@@ -122,24 +124,40 @@ export default function RegistrationsPage({ params }: any) {
                             }`}
                           >
                             <div className="flex items-center gap-3">
+                              {/* Total Badge */}
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${hasPlayers ? 'bg-blue-50 text-[#4169E1]' : 'bg-slate-50 text-slate-400'}`}>
                                 {players.length}
                               </div>
                               <span className="text-sm font-medium text-slate-700">{weight}</span>
                             </div>
 
-                            {hasPlayers && (
-                              <button
-                                onClick={() => {
-                                  const categoryKey = players[0]?.category_key
-                                  if (categoryKey) router.push(`/admin/tournaments/${tournamentId}/registrations/${categoryKey}`)
-                                }}
-                                className="flex items-center gap-1 text-[#4169E1] hover:bg-[#4169E1] hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                              >
-                                View
-                                <ChevronRight size={14} />
-                              </button>
-                            )}
+                            <div className="flex items-center gap-4">
+                              {hasPlayers && (
+                                <div className="flex items-center gap-1.5 mr-2">
+                                  {/* Approved Small Badge */}
+                                  <div className="px-1.5 py-0.5 rounded-md bg-green-50 text-green-600 text-[10px] font-bold border border-green-100/50">
+                                    {approvedCount}
+                                  </div>
+                                  {/* Pending Small Badge */}
+                                  <div className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-100/50">
+                                    {pendingCount}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {hasPlayers && (
+                                <button
+                                  onClick={() => {
+                                    const categoryKey = players[0]?.category_key
+                                    if (categoryKey) router.push(`/admin/tournaments/${tournamentId}/registrations/${categoryKey}`)
+                                  }}
+                                  className="flex items-center gap-1 text-[#4169E1] hover:bg-[#4169E1] hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                >
+                                  View
+                                  <ChevronRight size={14} />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )
                       })}
