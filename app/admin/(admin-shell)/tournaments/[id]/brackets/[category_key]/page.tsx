@@ -75,125 +75,123 @@ export default function BracketViewPage() {
   const CONNECTOR_WIDTH = 40; // px
 
   return (
-    <div className="space-y-10 pb-20">
-      <div className="border-l-4 border-[#4169E1] pl-6">
-        <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 capitalize">
-          {categoryKey.replace(/-/g, ' ')}
-        </h1>
-        <p className="text-slate-500 text-sm font-medium mt-1">Declare winners to advance the bracket</p>
-      </div>
+        <div className="relative z-0 space-y-10 pb-20">
+          <div className="border-l-4 border-[#4169E1] pl-6">
+            <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 capitalize">
+              {categoryKey.replace(/-/g, ' ')}
+            </h1>
+            <p className="text-slate-500 text-sm font-medium mt-1">Declare winners to advance the bracket</p>
+          </div>
 
-      <div className="overflow-x-auto bg-white border border-slate-100 rounded-[2.5rem] p-12 shadow-sm min-h-[800px]">
-        <div className="flex gap-0 min-w-max items-start">
-          {Object.entries(rounds).map(([round, matches]) => {
-            const rNum = Number(round)
-            const slotHeight = Math.pow(2, rNum - 1) * 130 
+          <div className="overflow-x-auto bg-white border border-slate-100 rounded-[2.5rem] p-12 shadow-sm min-h-[800px] relative z-0">
+            <div className="flex gap-0 min-w-max items-start">
+              {Object.entries(rounds).map(([round, matches]) => {
+                const rNum = Number(round)
+                const slotHeight = Math.pow(2, rNum - 1) * 130 
 
-            return (
-              /* Increased width from w-64 to w-80 to provide room for longer names */
-              <div key={round} className="flex flex-col w-80">
-                <div className="text-center mb-10 h-12">
-                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Stage {rNum}</span>
-                  <h3 className="text-sm font-bold text-slate-900 mt-1 uppercase tracking-wider">
-                    {rNum === finalRoundNum ? "Finals" : `Round ${rNum}`}
-                  </h3>
-                </div>
+                return (
+                  <div key={round} className="flex flex-col w-80">
+                    <div className="text-center mb-10 h-12">
+                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Stage {rNum}</span>
+                      <h3 className="text-sm font-bold text-slate-900 mt-1 uppercase tracking-wider">
+                        {rNum === finalRoundNum ? "Finals" : `Round ${rNum}`}
+                      </h3>
+                    </div>
 
-                <div className="flex flex-col items-center">
-                  {matches.map((match, idx) => {
-                    const isP1Winner = match.winner_id === match.player1_id
-                    const isP2Winner = match.winner_id === match.player2_id
-                    const canSelect = match.player1_id && match.player2_id && !match.winner_id
+                    <div className="flex flex-col items-center">
+                      {matches.map((match, idx) => {
+                        const isP1Winner = match.winner_id === match.player1_id
+                        const isP2Winner = match.winner_id === match.player2_id
+                        const canSelect = match.player1_id && match.player2_id && !match.winner_id
 
-                    return (
-                      <div 
-                        key={match.id} 
-                        className="relative flex items-center justify-center w-full"
-                        style={{ height: `${slotHeight}px` }}
-                      >
-                        {/* EXIT CONNECTORS */}
-                        {rNum < finalRoundNum && (
-                          <>
-                            <div 
-                              className="absolute bg-slate-200" 
-                              style={{ right: 0, top: '50%', width: `${CONNECTOR_WIDTH}px`, height: '2px' }} 
-                            />
-                            <div 
-                              className="absolute bg-slate-200" 
-                              style={{ 
-                                right: 0, 
-                                width: '2px', 
-                                height: `${slotHeight / 2}px`,
-                                top: idx % 2 === 0 ? '50%' : 'auto',
-                                bottom: idx % 2 !== 0 ? '50%' : 'auto'
-                              }}
-                            />
-                          </>
-                        )}
-
-                        {/* ENTRY CONNECTORS */}
-                        {rNum > 1 && (
+                        return (
                           <div 
-                            className="absolute bg-slate-200" 
-                            style={{ left: 0, top: '50%', width: `${CONNECTOR_WIDTH}px`, height: '2px' }} 
-                          />
-                        )}
-
-                        {/* Match Container: Increased from w-52 to w-64 */}
-                        <div className="w-64 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm relative z-10 transition-all hover:border-[#4169E1]/30">
-                          <button
-                            disabled={!canSelect}
-                            onClick={() => handleSelectWinner(match, match.player1_id)}
-                            className={`w-full p-3 text-left flex items-center justify-between border-b border-slate-50 ${isP1Winner ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'}`}
+                            key={match.id} 
+                            className="relative flex items-center justify-center w-full"
+                            style={{ height: `${slotHeight}px` }}
                           >
-                            {/* Removed truncate and max-w; added whitespace-nowrap */}
-                            <span className="text-[11px] whitespace-nowrap pr-2">
-                              {match.player1?.name || "TBD"}
-                            </span>
-                            {isP1Winner && <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />}
-                          </button>
+                            {/* EXIT CONNECTORS */}
+                            {rNum < finalRoundNum && (
+                              <>
+                                <div 
+                                  className="absolute bg-slate-200" 
+                                  style={{ right: 0, top: '50%', width: `${CONNECTOR_WIDTH}px`, height: '2px' }} 
+                                />
+                                <div 
+                                  className="absolute bg-slate-200" 
+                                  style={{ 
+                                    right: 0, 
+                                    width: '2px', 
+                                    height: `${slotHeight / 2}px`,
+                                    top: idx % 2 === 0 ? '50%' : 'auto',
+                                    bottom: idx % 2 !== 0 ? '50%' : 'auto'
+                                  }}
+                                />
+                              </>
+                            )}
 
-                          <button
-                            disabled={!canSelect}
-                            onClick={() => handleSelectWinner(match, match.player2_id)}
-                            className={`w-full p-3 text-left flex items-center justify-between ${isP2Winner ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'}`}
-                          >
-                            <span className="text-[11px] whitespace-nowrap pr-2">
-                              {match.player2?.name || "TBD"}
-                            </span>
-                            {isP2Winner && <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />}
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
+                            {/* ENTRY CONNECTORS */}
+                            {rNum > 1 && (
+                              <div 
+                                className="absolute bg-slate-200" 
+                                style={{ left: 0, top: '50%', width: `${CONNECTOR_WIDTH}px`, height: '2px' }} 
+                              />
+                            )}
 
-          {/* --- CHAMPION PODIUM --- */}
-          <div className="flex flex-col w-56 h-full">
-            <div className="h-12 mb-10" />
-            <div 
-              className="relative flex items-center" 
-              style={{ height: `${Math.pow(2, finalRoundNum - 1) * 130}px` }}
-            >
-              <div className="w-10 h-0.5 bg-slate-200" />
-              
-              <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 flex flex-col items-center text-center shadow-inner w-full">
-                <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-[#4169E1] mb-4">
-                  <Trophy size={24} />
+                            {/* Match Container: Lowered z-index from z-10 to z-1 */}
+                            <div className="w-64 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm relative z-1 transition-all hover:border-[#4169E1]/30">
+                              <button
+                                disabled={!canSelect}
+                                onClick={() => handleSelectWinner(match, match.player1_id)}
+                                className={`w-full p-3 text-left flex items-center justify-between border-b border-slate-50 ${isP1Winner ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'}`}
+                              >
+                                <span className="text-[11px] whitespace-nowrap pr-2">
+                                  {match.player1?.name || "TBD"}
+                                </span>
+                                {isP1Winner && <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />}
+                              </button>
+
+                              <button
+                                disabled={!canSelect}
+                                onClick={() => handleSelectWinner(match, match.player2_id)}
+                                className={`w-full p-3 text-left flex items-center justify-between ${isP2Winner ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600'}`}
+                              >
+                                <span className="text-[11px] whitespace-nowrap pr-2">
+                                  {match.player2?.name || "TBD"}
+                                </span>
+                                {isP2Winner && <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* --- CHAMPION PODIUM --- */}
+              <div className="flex flex-col w-56 h-full">
+                <div className="h-12 mb-10" />
+                <div 
+                  className="relative flex items-center" 
+                  style={{ height: `${Math.pow(2, finalRoundNum - 1) * 130}px` }}
+                >
+                  <div className="w-10 h-0.5 bg-slate-200" />
+                  
+                  <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 flex flex-col items-center text-center shadow-inner w-full">
+                    <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-[#4169E1] mb-4">
+                      <Trophy size={24} />
+                    </div>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Champion</p>
+                    <p className={`text-xs font-black tracking-tight ${champion ? 'text-slate-900' : 'text-slate-300 italic'}`}>
+                      {champion || "TBD"}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Champion</p>
-                <p className={`text-xs font-black tracking-tight ${champion ? 'text-slate-900' : 'text-slate-300 italic'}`}>
-                  {champion || "TBD"}
-                </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
   )
 }
