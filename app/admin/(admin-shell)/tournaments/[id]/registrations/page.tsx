@@ -69,11 +69,27 @@ export default function RegistrationsPage({ params }: any) {
   return (
     <div className="max-w-5xl">
       {/* --- PAGE HEADER --- */}
-      <div className="mb-10">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Player Registrations</h1>
         <p className="text-slate-500 text-sm mt-1">
           Review and manage athlete brackets by age and weight category.
         </p>
+      </div>
+
+      {/* --- ALIGNED LEGEND --- */}
+      <div className="flex items-center gap-8 mb-10 py-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-lg bg-blue-50 text-[#4169E1] flex items-center justify-center text-[11px] font-bold border border-blue-100">0</div>
+          <span className="text-sm font-medium text-slate-500">Total Players</span>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-lg bg-green-50 text-green-600 flex items-center justify-center text-[11px] font-bold border border-green-100">0</div>
+          <span className="text-sm font-medium text-slate-500">Approved</span>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-[11px] font-bold border border-amber-100">0</div>
+          <span className="text-sm font-medium text-slate-500">Pending</span>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-10">
@@ -124,7 +140,6 @@ export default function RegistrationsPage({ params }: any) {
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              {/* Total Badge */}
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${hasPlayers ? 'bg-blue-50 text-[#4169E1]' : 'bg-slate-50 text-slate-400'}`}>
                                 {players.length}
                               </div>
@@ -134,11 +149,9 @@ export default function RegistrationsPage({ params }: any) {
                             <div className="flex items-center gap-4">
                               {hasPlayers && (
                                 <div className="flex items-center gap-1.5 mr-2">
-                                  {/* Approved Small Badge */}
                                   <div className="px-1.5 py-0.5 rounded-md bg-green-50 text-green-600 text-[10px] font-bold border border-green-100/50">
                                     {approvedCount}
                                   </div>
-                                  {/* Pending Small Badge */}
                                   <div className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-100/50">
                                     {pendingCount}
                                   </div>
