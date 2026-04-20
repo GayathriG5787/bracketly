@@ -135,20 +135,25 @@ export default function BracketViewPage() {
             </div>
 
             {/* Actions */}
-            <div className="px-6 py-4 bg-slate-50/80 flex items-center justify-end gap-3 border-t border-slate-100">
+            <div className="px-6 py-4 bg-slate-50/80 flex items-center gap-3 border-t border-slate-100">
               <button 
                 onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
                 disabled={isUpdating}
-                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 disabled:opacity-50 transition-colors"
+                className="flex-1 py-3 text-xs font-bold text-slate-500 bg-white border border-slate-200 rounded-lg transition-all duration-150 hover:bg-slate-50 hover:text-slate-800 hover:border-slate-300 active:bg-slate-100 active:scale-[0.98] disabled:opacity-50"
               >
                 Cancel
               </button>
+              
               <button 
                 onClick={handleConfirmWinner}
                 disabled={isUpdating}
-                className="px-5 py-2.5 bg-[#1e293b] text-white rounded-lg text-xs font-bold hover:bg-slate-800 disabled:bg-slate-400 transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
+                className="flex-1 py-3 bg-[#1e293b] text-white rounded-lg text-xs font-bold transition-all duration-150 hover:bg-slate-800 active:bg-slate-900 active:scale-[0.98] disabled:bg-slate-400 flex items-center justify-center gap-2 whitespace-nowrap"
               >
-                {isUpdating ? <Loader2 size={14} className="animate-spin" /> : "Confirm Selection"}
+                {isUpdating ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  "Confirm Selection"
+                )}
               </button>
             </div>
           </div>
