@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { useParams, useRouter } from "next/navigation"
 import { getCategory } from "@/utils/category"
 import { beltOptions } from "@/utils/beltOptions"
+import { Toaster, toast } from "sonner"
 import { 
   User, 
   Phone, 
@@ -115,11 +116,12 @@ export default function RegisterPlayer() {
 
   const addAchievement = () => {
     if (!level || !medalType || !year || !achievementFile) {
-      alert("Fill all achievement fields + upload certificate")
+      toast.warning("Fill all achievement fields and upload certificate");
       return
     }
     setAchievements([...achievements, { level, medal_type: medalType, year: Number(year), file: achievementFile }])
     setLevel(""); setMedalType(""); setYear(""); setAchievementFile(null)
+    toast.success("Achievement added to list");
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,28 +133,29 @@ export default function RegisterPlayer() {
       !address1 || !address2 || !city || !district || !stateName || !pincode ||
       !birthCert || !aadhar || !beltCert || !studentType
     ) {
-      alert("Please fill all mandatory fields and upload required documents (Birth Certificate, Aadhar, and Belt Certificate).")
+      toast.error("Please fill all mandatory fields and upload required documents.");
       return
     }
 
     if (studentType === "school" && (!schoolName || !schoolProof)) {
-      alert("As a school student, School Name and School Bonafide are mandatory.")
+      toast.warning("School Name and School Bonafide are mandatory.");
       return
     }
 
     if (studentType === "college" && (!collegeName || !collegeProof)) {
-      alert("As a college student, College Name and College Proof are mandatory.")
+      toast.warning("College Name and College Proof are mandatory.");
       return
     }
 
     const totalP = Number(districtParticipations || 0) + Number(stateParticipations || 0) + Number(nationalParticipations || 0)
     const uploadedParticipations = participations.filter(p => p.file).length
     if (totalP > 0 && uploadedParticipations !== totalP) {
-        alert("Please upload certificates for all specified participation counts.")
+        toast.warning("Please upload certificates for all specified participation counts.");
         return
     }
 
     setLoading(true)
+    const toastId = toast.loading("Processing registration and uploading files...");
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -215,18 +218,27 @@ export default function RegisterPlayer() {
         }
       }
 
-      alert("Registration successful")
-      router.push('/player/dashboard')
+      // Success notification and delayed redirect
+      toast.success("Registration successful!", { 
+        id: toastId,
+        description: "Redirecting you to the dashboard..." 
+      });
+      
+      setTimeout(() => {
+        router.push('/player/dashboard')
+      }, 2000);
+
     } catch (err) {
       console.error(err)
-      alert("Registration failed.")
-    } finally {
+      toast.error("Registration failed. Please try again.", { id: toastId });
       setLoading(false)
     }
   }
 
   return (
     <div className="space-y-10 max-w-4xl mx-auto pb-20 p-4">
+      <Toaster richColors position="top-right" />
+      
       <div className="border-l-4 border-[#4169E1] pl-6">
         <button onClick={() => router.back()} className="text-[10px] font-bold text-[#4169E1] uppercase tracking-widest flex items-center gap-1 mb-2 hover:opacity-70">
           <ChevronLeft size={12} /> Back
@@ -261,8 +273,6 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
-        {/* ... (Address and Documents sections remain unchanged) ... */}
-        
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><MapPin size={20} /></div>
@@ -319,7 +329,6 @@ export default function RegisterPlayer() {
             <InputField label="State Count" type="number" min="0" value={stateParticipations} onChange={setStateParticipations} />
             <InputField label="National Count" type="number" min="0" value={nationalParticipations} onChange={setNationalParticipations} />
           </div>
-          {/* ... (Participation certificate rendering remains unchanged) ... */}
           <div className="space-y-4">
             {[...Array(Number(districtParticipations || 0))].map((_, i) => (
               <FileUploader key={`dist-${i}`} label={`District Certificate ${i + 1}`} file={participations[i]?.file} onChange={(f: File) => {
@@ -378,18 +387,12 @@ export default function RegisterPlayer() {
   )
 }
 
-/**
- * Updated InputField to block negative inputs
- */
 function InputField({ label, dark, type, ...props }: any) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    
-    // If it's a number field, prevent negative values
     if (type === "number" && val !== "" && Number(val) < 0) {
       return; 
     }
-    
     props.onChange(val);
   };
 
