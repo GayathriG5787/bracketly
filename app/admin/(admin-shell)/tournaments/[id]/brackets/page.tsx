@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { generateBracket } from "@/lib/generateBracket"
 import { useRouter } from "next/navigation"
-import { ChevronDown, GitBranch, Loader2, CheckCircle2, Eye } from "lucide-react"
+import { ChevronDown, GitBranch, Loader2, CheckCircle2, Eye, Trophy } from "lucide-react"
 
 export default function BracketsPage({ params }: any) {
   const { id: tournamentId } = use(params) as { id: string }
@@ -21,7 +21,7 @@ export default function BracketsPage({ params }: any) {
     Infant: ["Under 17kg", "Under 19kg", "Under 21kg", "Under 23kg", "Over 23kg"],
     "Sub-Junior": {
       Male: ["Under 16kg", "Under 18kg", "Under 21kg", "Under 23kg", "Under 25kg", "Under 27kg", "Under 29kg", "Under 32kg", "Under 35kg", "Under 38kg", "Under 41kg", "Under 44kg", "Under 50kg", "Over 50kg"],
-      Female: ["Under 14kg", "Under 16kg", "Under 18kg", "Under 20kg", "Under 22kg", "Under 24kg", "Under 26kg", "Under 29kg", "Under 32kg", "Under 35kg", "Under 38kg", "Under 41kg", "Under 47kg", "Over 47kg"]
+      Female: ["Under 14kg", "Under 16kg", "Under 18kg", "Under 20kg", "Under 22kg", "Under 24kg", "Under 26kg", "Under 29kg", "Under 32kg", "Under 35kg", "Under 38kg", "Under 41kg", "Under 44kg", "Under 50kg", "Over 50kg"]
     },
     Cadet: {
       Male: ["Under 33kg", "Under 37kg", "Under 41kg", "Under 45kg", "Under 49kg", "Under 53kg", "Under 57kg", "Under 61kg", "Under 65kg", "Over 65kg"],
@@ -83,18 +83,62 @@ export default function BracketsPage({ params }: any) {
     }
     setLoadingCategory(categoryKey)
     const res = await generateBracket(tournamentId, categoryKey)
-    setLoadingCategory(null)
-
+    
     if (!res.success) {
+      setLoadingCategory(null)
       alert(res.message)
       return
     }
+
     setGeneratedCategories(prev => new Set(prev).add(categoryKey))
     router.push(`/admin/tournaments/${tournamentId}/brackets/${categoryKey}`)
   }
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-5xl relative">
+      {/* CSS Injection for the progress bar animation */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes indeterminate {
+          0% { left: -35%; right: 100%; }
+          60% { left: 100%; right: -90%; }
+          100% { left: 100%; right: -90%; }
+        }
+        .animate-indeterminate {
+          animation: indeterminate 2s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+        }
+      `}} />
+
+      {/* --- FULL SCREEN BLOCKING LOADING UI --- */}
+      {loadingCategory && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/95 backdrop-blur-md">
+          <div className="flex flex-col items-center max-w-sm w-full px-6">
+            
+            {/* Professional Orbital Spinner */}
+            <div className="relative w-20 h-20 mb-8">
+              <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-t-[#4169E1] animate-spin" />
+              <div className="absolute inset-4 rounded-full border-4 border-slate-50" />
+              <div className="absolute inset-4 rounded-full border-4 border-b-blue-300 animate-spin-reverse" style={{ animationDuration: '1.5s' }} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Trophy size={24} className="text-[#4169E1] opacity-80" />
+              </div>
+            </div>
+
+            <div className="text-center space-y-2 mb-8">
+              <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Generating Brackets</h3>
+              <p className="text-slate-500 font-medium">Finalizing seeding and matchups...</p>
+            </div>
+            
+            {/* Working Indeterminate Progress Bar */}
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
+              <div className="absolute inset-y-0 bg-[#4169E1] rounded-full animate-indeterminate" style={{ width: '30%' }} />
+            </div>
+            
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 mt-6 font-bold">Bracketly Engine v2.0</p>
+          </div>
+        </div>
+      )}
+
       {/* --- PAGE HEADER --- */}
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tournament Brackets</h1>
@@ -150,7 +194,6 @@ export default function BracketsPage({ params }: any) {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {/* VIEW PLAYERS BUTTON */}
                                 {players.length > 0 && (
                                   <button
                                     onClick={() => {
@@ -166,7 +209,7 @@ export default function BracketsPage({ params }: any) {
                                 {canGenerate && (
                                   <button
                                     onClick={() => handleGenerate(players)}
-                                    disabled={isLoading}
+                                    disabled={loadingCategory !== null}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
                                       isLoading ? "bg-slate-100 text-slate-400 cursor-not-allowed" :
                                       isGenerated ? "bg-green-600 text-white hover:bg-green-700" : "bg-[#4169E1] text-white hover:bg-[#3252b0]"
