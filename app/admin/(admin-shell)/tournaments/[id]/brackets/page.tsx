@@ -134,7 +134,7 @@ export default function BracketsPage({ params }: any) {
               <div className="absolute inset-y-0 bg-[#4169E1] rounded-full animate-indeterminate" style={{ width: '30%' }} />
             </div>
             
-            <p className="text-[10px] uppercase tracking-widest text-slate-400 mt-6 font-bold">Bracketly Engine v2.0</p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-400 mt-6 font-bold">Bracketly Engine v1.0</p>
           </div>
         </div>
       )}
