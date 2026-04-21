@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { useParams } from "next/navigation"
-import { Trophy, CheckCircle2, Loader2, X } from "lucide-react"
+import Link from "next/link"
+import { Trophy, CheckCircle2, Loader2, X, ArrowLeft } from "lucide-react"
 
 export default function BracketViewPage() {
   const params = useParams()
@@ -161,6 +162,13 @@ export default function BracketViewPage() {
       )}
 
       <div className="border-l-4 border-[#4169E1] pl-6">
+          <Link 
+            href={`/admin/tournaments/${tournamentId}/brackets`}
+            className="flex items-center text-slate-500 hover:text-[#4169E1] transition-colors mb-4 text-sm font-medium gap-1 group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Divisions
+        </Link>
         <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 capitalize">
           {categoryKey.replace(/-/g, ' ')}
         </h1>
