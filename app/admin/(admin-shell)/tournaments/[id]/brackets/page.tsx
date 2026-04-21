@@ -4,7 +4,8 @@ import { use, useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { generateBracket } from "@/lib/generateBracket"
 import { useRouter } from "next/navigation"
-import { ChevronDown, GitBranch, Loader2, CheckCircle2, Eye, Trophy } from "lucide-react"
+import Link from "next/link"
+import { ChevronDown, GitBranch, Loader2, CheckCircle2, Eye, Trophy, ArrowLeft } from "lucide-react"
 
 export default function BracketsPage({ params }: any) {
   const { id: tournamentId } = use(params) as { id: string }
@@ -141,6 +142,13 @@ export default function BracketsPage({ params }: any) {
 
       {/* --- PAGE HEADER --- */}
       <div className="mb-10">
+          <Link 
+            href={`/admin/tournaments/${tournamentId}`}
+            className="flex items-center text-slate-500 hover:text-[#4169E1] transition-colors mb-4 text-sm font-medium gap-1 group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Tournament Console
+        </Link>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tournament Brackets</h1>
         <p className="text-slate-500 text-sm mt-1">
           Generate and manage competition brackets for each division.
