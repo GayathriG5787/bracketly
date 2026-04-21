@@ -3,8 +3,9 @@
 import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import Link from "next/link"
 import { getCategory } from "@/utils/category"
-import { Users, ChevronDown, ChevronRight, MapPin, Trophy } from "lucide-react"
+import { Users, ChevronDown, ChevronRight, MapPin, Trophy, ArrowLeft } from "lucide-react"
 
 export default function RegistrationsPage({ params }: any) {
   const { id: tournamentId } = use(params) as { id: string }
@@ -69,6 +70,14 @@ export default function RegistrationsPage({ params }: any) {
   return (
     <div className="max-w-5xl">
       {/* --- PAGE HEADER --- */}
+
+          <Link 
+            href={`/admin/tournaments/${tournamentId}`}
+            className="flex items-center text-slate-500 hover:text-[#4169E1] transition-colors mb-4 text-sm font-medium gap-1 group"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Tournament Console
+        </Link>
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Player Registrations</h1>
         <p className="text-slate-500 text-sm mt-1">
