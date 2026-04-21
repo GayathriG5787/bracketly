@@ -2,7 +2,7 @@
 
 import { use } from "react"
 import Link from "next/link"
-import { Users, LayoutGrid, ChevronRight } from "lucide-react"
+import { Users, LayoutGrid, ChevronRight, ArrowLeft } from "lucide-react"
 
 export default function TournamentAdminPage({ params }: any) {
   const { id: tournamentId } = use(params) as { id: string }
@@ -10,6 +10,15 @@ export default function TournamentAdminPage({ params }: any) {
   return (
     <div className="max-w-5xl">
       {/* --- PAGE HEADER --- */}
+
+      <Link 
+        href="/admin/tournaments" 
+        className="flex items-center text-slate-500 hover:text-[#4169E1] transition-colors mb-4 text-sm font-medium gap-1 group"
+      >
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        Back to Tournaments
+      </Link>
+
       <div className="border-l-4 border-[#4169E1] pl-6 mb-12">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tournament Console</h1>
         <p className="text-slate-500 font-medium mt-1">
