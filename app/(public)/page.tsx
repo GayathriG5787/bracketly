@@ -173,7 +173,7 @@ export default function HomePage() {
           </div>
           <div className="relative">
             <img 
-              src="http://googleusercontent.com/image_collection/image_retrieval/6211987600187861773_1" 
+              src="/SaaS.png"
               alt="SaaS interface mockup" 
               className="rounded-lg border border-slate-800"
             />
