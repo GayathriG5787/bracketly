@@ -101,7 +101,7 @@ export default function HomePage() {
     </section>
 
       {/* --- CORE INFRASTRUCTURE (FEATURES) --- */}
-      <section id="features" className="py-24 bg-white">
+      <section id="features" className="pb-24 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
             <div>
