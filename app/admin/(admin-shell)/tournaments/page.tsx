@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
-import { Calendar, MapPin, Trophy, ChevronRight, Search } from "lucide-react"
+import { Calendar, MapPin, Trophy, ChevronRight, Search, ArrowLeft } from "lucide-react"
 
 export default function AdminTournamentsPage() {
   const [tournaments, setTournaments] = useState<any[]>([])
@@ -30,6 +30,15 @@ export default function AdminTournamentsPage() {
   return (
     <div className="max-w-6xl">
       {/* --- PAGE HEADER --- */}
+
+        <Link 
+          href="/admin" 
+          className="flex items-center text-slate-500 hover:text-[#4169E1] transition-colors mb-4 text-sm font-medium gap-1 group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Back to Dashboard
+        </Link>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tournaments</h1>
