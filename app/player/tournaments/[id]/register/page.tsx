@@ -16,8 +16,38 @@ import {
   ChevronLeft, 
   Upload,
   CheckCircle2,
-  Award
+  Award,
+  AlertCircle,
+  Loader2,
+  Info
 } from "lucide-react"
+
+// --- MODERN SAAS NOTIFICATION UI ---
+const ModernNotification = ({ title, description, type }: { title: string, description?: string, type: 'success' | 'error' | 'warning' | 'loading' }) => {
+  const themes = {
+    success: { bg: "bg-emerald-50", border: "border-emerald-200", icon: <CheckCircle2 className="text-emerald-600" />, accent: "bg-emerald-600" },
+    error: { bg: "bg-red-50", border: "border-red-200", icon: <AlertCircle className="text-red-600" />, accent: "bg-red-600" },
+    warning: { bg: "bg-amber-50", border: "border-amber-200", icon: <Info className="text-amber-600" />, accent: "bg-amber-600" },
+    loading: { bg: "bg-slate-50", border: "border-slate-200", icon: <Loader2 className="text-[#4169E1] animate-spin" />, accent: "bg-[#4169E1]" }
+  }
+
+  const theme = themes[type];
+
+  return (
+    <div className={`w-[450px] ${theme.bg} border ${theme.border} p-5 rounded-3xl shadow-2xl backdrop-blur-md flex items-center gap-5 animate-in slide-in-from-right-10 fade-in duration-500`}>
+      <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
+        {theme.icon}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <span className={`w-1.5 h-1.5 rounded-full ${theme.accent}`} />
+          <h3 className="font-bold text-slate-900 text-sm uppercase tracking-tight">{title}</h3>
+        </div>
+        {description && <p className="text-slate-500 text-xs mt-0.5 font-medium leading-relaxed">{description}</p>}
+      </div>
+    </div>
+  )
+}
 
 export default function RegisterPlayer() {
   const params = useParams<{ id: string }>()
@@ -116,12 +146,12 @@ export default function RegisterPlayer() {
 
   const addAchievement = () => {
     if (!level || !medalType || !year || !achievementFile) {
-      toast.warning("Fill all achievement fields and upload certificate");
+      toast.custom(() => <ModernNotification type="warning" title="Incomplete entry" description="Please fill all fields and upload certificate." />);
       return
     }
     setAchievements([...achievements, { level, medal_type: medalType, year: Number(year), file: achievementFile }])
     setLevel(""); setMedalType(""); setYear(""); setAchievementFile(null)
-    toast.success("Achievement added to list");
+    toast.custom(() => <ModernNotification type="success" title="Achievement added" description="Entry has been successfully added to your list." />);
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,29 +163,29 @@ export default function RegisterPlayer() {
       !address1 || !address2 || !city || !district || !stateName || !pincode ||
       !birthCert || !aadhar || !beltCert || !studentType
     ) {
-      toast.error("Please fill all mandatory fields and upload required documents.");
+      toast.custom(() => <ModernNotification type="error" title="Missing Requirements" description="Ensure all mandatory documents are uploaded." />);
       return
     }
 
     if (studentType === "school" && (!schoolName || !schoolProof)) {
-      toast.warning("School Name and School Bonafide are mandatory.");
+      toast.custom(() => <ModernNotification type="warning" title="School Info Missing" description="Academic details are required for school category." />);
       return
     }
 
     if (studentType === "college" && (!collegeName || !collegeProof)) {
-      toast.warning("College Name and College Proof are mandatory.");
+      toast.custom(() => <ModernNotification type="warning" title="College Info Missing" description="Academic details are required for college category." />);
       return
     }
 
     const totalP = Number(districtParticipations || 0) + Number(stateParticipations || 0) + Number(nationalParticipations || 0)
     const uploadedParticipations = participations.filter(p => p.file).length
     if (totalP > 0 && uploadedParticipations !== totalP) {
-        toast.warning("Please upload certificates for all specified participation counts.");
+        toast.custom(() => <ModernNotification type="warning" title="Upload Incomplete" description="Participation certificates missing." />);
         return
     }
 
     setLoading(true)
-    const toastId = toast.loading("Processing registration and uploading files...");
+    const toastId = toast.custom(() => <ModernNotification type="loading" title="Processing Submission" description="We are securely uploading your documents." />);
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -218,26 +248,25 @@ export default function RegisterPlayer() {
         }
       }
 
-      // Success notification and delayed redirect
-      toast.success("Registration successful!", { 
-        id: toastId,
-        description: "Redirecting you to the dashboard..." 
-      });
+      toast.dismiss(toastId)
+      toast.custom(() => <ModernNotification type="success" title="Registration Completed" description="You've been registered. Redirecting to dashboard..." />);
       
       setTimeout(() => {
         router.push('/player/dashboard')
-      }, 2000);
+      }, 2500);
 
     } catch (err) {
       console.error(err)
-      toast.error("Registration failed. Please try again.", { id: toastId });
+      toast.dismiss(toastId)
+      toast.custom(() => <ModernNotification type="error" title="Registration Failed" description="Could not process data. Please try again later." />);
       setLoading(false)
     }
   }
 
   return (
     <div className="space-y-10 max-w-4xl mx-auto pb-20 p-4">
-      <Toaster richColors position="top-right" />
+      {/* High Visibility Position */}
+      <Toaster position="top-right" expand={true} richColors={false} />
       
       <div className="border-l-4 border-[#4169E1] pl-6">
         <button onClick={() => router.back()} className="text-[10px] font-bold text-[#4169E1] uppercase tracking-widest flex items-center gap-1 mb-2 hover:opacity-70">
@@ -247,6 +276,7 @@ export default function RegisterPlayer() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* PERSONAL INFO */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><User size={20} /></div>
@@ -273,6 +303,7 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
+        {/* ADDRESS INFO */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><MapPin size={20} /></div>
@@ -290,6 +321,7 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
+        {/* DOCUMENTS */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-amber-50 rounded-lg text-amber-600"><FileText size={20} /></div>
@@ -319,6 +351,7 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
+        {/* PARTICIPATIONS */}
         <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Award size={20} /></div>
@@ -350,6 +383,7 @@ export default function RegisterPlayer() {
           </div>
         </div>
 
+        {/* ACHIEVEMENTS */}
         <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-xl">
            <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-white/10 rounded-lg text-white"><Trophy size={20} /></div>
