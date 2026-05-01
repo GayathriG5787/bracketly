@@ -281,7 +281,7 @@ export async function generateBracket(
   categoryKey: string
 ) {
 
-  console.log("🚀 generateBracket called", tournamentId, categoryKey)
+  console.log("generateBracket called", tournamentId, categoryKey)
   // Checking whether bracket already exists
 
   const { data: existing } = await supabase
