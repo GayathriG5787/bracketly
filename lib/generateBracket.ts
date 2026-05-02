@@ -280,7 +280,7 @@ export async function generateBracket(
   tournamentId: string,
   categoryKey: string
 ) {
-  
+
   // Checking whether bracket already exists
 
   const { data: existing } = await supabase
@@ -319,12 +319,8 @@ export async function generateBracket(
 
   linkMatches(rounds)
 
-  console.log("TOTAL ROUNDS:", rounds.length)
-
   let totalMatches = 0
   for (const r of rounds) totalMatches += r.length
-
-  console.log("TOTAL MATCHES:", totalMatches)
 
   const matchMap = await insertMatches(tournamentId, rounds)
 
