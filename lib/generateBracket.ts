@@ -16,7 +16,7 @@ export async function getApprovedPlayers(
     `)
     .eq("tournament_id", tournamentId)
     .eq("approved", true)
-    .eq("category_key", categoryKey) // ✅ THIS IS THE FIX
+    .eq("category_key", categoryKey) 
 
   if (error) {
     console.error("Error fetching players:", error)
@@ -111,7 +111,7 @@ function generateAllRounds(bracketSize: number, categoryKey: string) {
       roundMatches.push({
         round,
         position: i,
-        category_key: categoryKey // ✅ FIX
+        category_key: categoryKey 
       })
     }
 
@@ -221,7 +221,7 @@ async function autoAdvanceByes(
     .from("matches")
     .select("*")
     .eq("tournament_id", tournamentId)
-    .eq("category_key", categoryKey) // ✅ Filter by category
+    .eq("category_key", categoryKey) 
 
   if (!matches) return
 
