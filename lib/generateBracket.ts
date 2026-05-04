@@ -260,18 +260,8 @@ async function autoAdvanceByes(
 }
 
 /*
-LOCK BRACKET
+LOCK BRACKET is removed, as there is no field named bracket_locked in matches table. And, we can identify whether the bracket for some specific category key and tournament by entries in the matches table matching the category key and tournament id without the need of separate bracket_locked field in matches table. We can include that field if we need that in the future. 
 */
-async function lockBracket(
-  tournamentId: string,
-  categoryKey: string
-) {
-  await supabase
-    .from("matches")
-    .update({ bracket_locked: true })
-    .eq("tournament_id", tournamentId)
-    .eq("category_key", categoryKey)
-}
 
 /*
 MAIN FUNCTION
@@ -327,8 +317,6 @@ export async function generateBracket(
   await updateNextMatches(rounds, matchMap)
 
   await autoAdvanceByes(tournamentId, categoryKey)
-
-  await lockBracket(tournamentId, categoryKey)
 
   return {
     success: true,
